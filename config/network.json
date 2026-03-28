@@ -1,0 +1,5 @@
+{
+  "defaultNode": "node-1",
+  "retryAttempts": 3,
+  "timeoutMs": 5000
+}
