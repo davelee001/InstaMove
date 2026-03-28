@@ -1,0 +1,5 @@
+{
+  "algorithm": "aes-256-cbc",
+  "secretKey": "your-secret-key",
+  "ivLength": 16
+}
