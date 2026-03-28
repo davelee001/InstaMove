@@ -54,7 +54,10 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
           }
           body {
             margin: 0;
-            min-height: 100vh;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
             font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
             color: var(--text);
             background:
@@ -63,32 +66,29 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
               linear-gradient(135deg, #030712, var(--bg));
           }
           .shell {
-            width: min(1180px, calc(100% - 20px));
-            margin: 0 auto;
-            grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.95fr);
-            gap: 14px;
+            width: 100%;
+            height: 100%;
+            display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-width: none;
+            gap: 0;
+            padding: 0;
           }
           .hero {
-            order: -1;
+            flex: 0 0 auto;
             display: grid;
-            grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr);
-            gap: 10px;
-            align-items: stretch;
-            width: 100%;
-            max-width: none;
+            grid-template-columns: 1fr 340px;
+            gap: 12px;
+            padding: 12px;
           }
           .panel {
             background: var(--panel);
             border: 1px solid var(--panel-border);
-            border-radius: 24px;
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(18px);
           }
           .hero-main {
-            padding: 12px 14px;
+            padding: 16px 20px;
           }
           .eyebrow {
             display: inline-flex;
@@ -110,115 +110,73 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
             box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
           }
           h1 {
-            margin: 8px 0 6px;
-            font-size: clamp(1.3rem, 2vw, 1.8rem);
-            line-height: 0.96;
+            margin: 12px 0 8px;
+            font-size: clamp(1.5rem, 3vw, 2.4rem);
+            line-height: 1.1;
             letter-spacing: -0.04em;
           }
           .lede {
-            max-width: 58ch;
+            max-width: 70ch;
             margin: 0;
             color: var(--muted);
-            font-size: 0.78rem;
-            line-height: 1.4;
+            font-size: 0.9rem;
+            line-height: 1.5;
           }
           .chips {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 10px;
+            gap: 8px;
+            margin-top: 16px;
           }
           .chip {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 6px 10px;
+            padding: 8px 14px;
             border-radius: 999px;
             background: rgba(148, 163, 184, 0.08);
             color: #dbeafe;
-            font-size: 0.68rem;
+            font-size: 0.75rem;
             border: 1px solid rgba(148, 163, 184, 0.14);
           }
           .chip strong {
             color: #fff;
           }
           .hero-side {
-            padding: 10px;
+            padding: 16px;
             display: grid;
             grid-template-columns: 1fr;
-            gap: 8px;
+            gap: 10px;
             align-items: stretch;
           }
           .metric-inline {
-            padding: 8px 10px;
+            padding: 12px 14px;
             border-radius: 12px;
             background: rgba(3, 7, 18, 0.28);
             border: 1px solid rgba(148, 163, 184, 0.12);
             display: flex;
+            justify-content: space-between;
             align-items: center;
             gap: 10px;
             white-space: nowrap;
           }
           .metric-label {
             color: var(--muted);
-            font-size: 0.64rem;
+            font-size: 0.75rem;
           }
           .metric-value {
-            font-size: 0.74rem;
+            font-size: 0.85rem;
             font-weight: 700;
           }
-          .grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 16px;
-            margin-top: 18px;
-          }
-          .card {
-            padding: 20px;
-            border-radius: 20px;
-            background: var(--bg-soft);
-            border: 1px solid var(--panel-border);
-          }
-          .card h2 {
-            margin: 0 0 10px;
-            font-size: 1.05rem;
-          }
-          .card p,
-          .step p,
-          li {
-            color: var(--muted);
-            line-height: 1.6;
-          }
-          .steps {
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            gap: 16px;
-            margin-top: 16px;
-          }
-          .step-list {
-            margin: 0;
-            padding-left: 18px;
-          }
-          .code {
-            margin: 0;
-            padding: 18px;
-            border-radius: 18px;
-            overflow: auto;
-            background: #020617;
-            color: #cbd5e1;
-            border: 1px solid rgba(148, 163, 184, 0.14);
-            font-size: 0.88rem;
-            line-height: 1.6;
-          }
           .tx-panel {
-            order: 1;
-            margin: 2px 0 0;
-            padding: 34px;
-            display: grid;
-            gap: 20px;
-            width: 100%;
-            max-width: none;
-            box-shadow: 0 34px 110px rgba(0, 0, 0, 0.5);
+            flex: 1;
+            margin: 0 12px 12px 12px;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 0;
+            overflow: hidden;
           }
           .form-grid {
             display: grid;
@@ -256,36 +214,50 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
           .button {
             border: 0;
             border-radius: 14px;
-            padding: 14px 20px;
+            padding: 14px 24px;
             background: linear-gradient(135deg, #f59e0b, #f97316);
             color: #fff;
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 14px 30px rgba(245, 158, 11, 0.18);
+            transition: transform 0.2s;
           }
-          .button.secondary {
-            background: rgba(148, 163, 184, 0.12);
-            color: #dbeafe;
-            box-shadow: none;
+          .button:active {
+            transform: scale(0.98);
           }
           .helper {
             color: var(--muted);
             font-size: 0.8rem;
           }
+          .response-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+          }
           .response-box {
-            min-height: 220px;
-            font-size: 0.95rem;
+            flex: 1;
+            margin: 0;
+            padding: 16px;
+            border-radius: 12px;
+            overflow: auto;
+            background: #020617;
+            color: #86efac;
+            border: 1px solid rgba(148, 163, 184, 0.14);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
           }
           .footer {
-            order: 2;
+            flex: 0 0 auto;
             display: flex;
             justify-content: space-between;
-            gap: 12px;
-            align-items: center;
-            margin-top: 0;
+            padding: 12px 24px;
             color: var(--muted);
-            font-size: 0.74rem;
-            width: 100%;
+            font-size: 0.75rem;
+            background: rgba(3, 7, 18, 0.4);
+            border-top: 1px solid var(--panel-border);
           }
           .status-good {
             color: #86efac;
@@ -353,12 +325,11 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
           </section>
 
           <section class="panel tx-panel" id="transaction-panel">
-            <div>
-              <h2 style="margin: 0 0 6px; font-size: 1.2rem;">Run a transaction</h2>
-              <p class="helper" style="margin: 0;">Enter one local Lightning-looking invoice at a time. The machine will recognize the amount behind it and call <strong>/request</strong>.</p>
+            <div style="flex: 0 0 auto;">
+              <h2 style="margin: 0 0 4px; font-size: 1.2rem;">Run a transaction</h2>
             </div>
-            <form id="transaction-form">
-              <div class="form-grid" style="grid-template-columns: 1fr;">
+            <form id="transaction-form" style="flex: 0 0 auto;">
+              <div class="form-grid">
                 <div class="field">
                   <label for="paymentRequest">Invoice</label>
                   <input id="paymentRequest" name="paymentRequest" placeholder="lnbcrt10000u1instamove..." value="" required />
@@ -366,12 +337,12 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
               </div>
               <div class="actions" style="margin-top: 14px;">
                 <button class="button" type="submit">Pay Invoice</button>
-                <span class="helper" id="formHint">The machine knows the amount for each Lightning-looking local invoice.</span>
+                <span class="helper" id="formHint"></span>
               </div>
             </form>
-            <div>
-              <h2 style="margin: 0 0 8px; font-size: 1rem;">Live response</h2>
-              <pre class="code response-box" id="responseOutput">{
+            <div class="response-container">
+              <h2 style="margin: 0 0 4px; font-size: 1rem;">Live response</h2>
+              <pre class="response-box" id="responseOutput">{
   "status": "waiting",
   "message": "Submit the form to see the invoice confirmation."
 }</pre>
@@ -379,7 +350,7 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
           </section>
 
           <div class="footer">
-            <span>InstaMove backend is live on port 3000.</span>
+            <span>InstaMove backend is live.</span>
             <span class="status-good">Bluetooth-first, regtest-ready, without internet</span>
           </div>
           <script>
@@ -388,16 +359,27 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
             const hint = document.getElementById("formHint");
             const paymentRequestInput = document.getElementById("paymentRequest");
 
+            paymentRequestInput.addEventListener("input", () => {
+              if (!paymentRequestInput.value.trim()) {
+                hint.textContent = "";
+              }
+            });
+
             function renderJson(data) {
               output.textContent = JSON.stringify(data, null, 2);
             }
 
             form.addEventListener("submit", async (event) => {
               event.preventDefault();
+              
+              const val = paymentRequestInput.value.trim();
+              if (!val) return;
+
+              hint.style.color = "";
               hint.textContent = "Decoding local invoice...";
 
               const body = {
-                paymentRequest: paymentRequestInput.value.trim()
+                paymentRequest: val
               };
 
               try {
@@ -409,12 +391,26 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
 
                 const data = await response.json();
                 renderJson(data);
-                hint.textContent = data.status === "ok"
-                  ? data.message || "Invoice completed successfully."
-                  : data.message || "Invoice failed.";
+                
+                if (data.status === "ok") {
+                  const amount = data.amount || (data.decodedInvoice && data.decodedInvoice.amount) || "unknown amount";
+                  hint.textContent = "Sent " + amount + " sats successfully.";
+                  hint.style.color = "var(--good)";
+                } else {
+                  hint.style.color = "var(--warn)";
+                  const msg = data.message || "";
+                  if (msg.includes("Unrecognized local invoice")) {
+                    hint.textContent = "Unrecognized invoice";
+                  } else if (val.startsWith("lnbcrt") && val.length < 20) {
+                    hint.textContent = "Incorrect invoice";
+                  } else {
+                    hint.textContent = msg || "Invoice failed.";
+                  }
+                }
               } catch (error) {
                 renderJson({ status: "error", message: error.message });
                 hint.textContent = "Request failed.";
+                hint.style.color = "var(--warn)";
               }
             });
           </script>
@@ -526,4 +522,5 @@ app.post("/bluetooth/receive", async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
