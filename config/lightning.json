@@ -1,0 +1,8 @@
+{
+  "mode": "regtest",
+  "invoiceMemo": "InstaMove payment",
+  "invoiceExpirySeconds": 600,
+  "channelFundingSats": 100000,
+  "feeLimitSat": 20,
+  "autoSettle": true
+}
