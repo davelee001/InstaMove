@@ -1,0 +1,91 @@
+[
+  {
+    "id": "channel-1",
+    "nodeId": "node-1",
+    "status": "open"
+  },
+  {
+    "id": "channel-1774603817821",
+    "nodeId": "node-1",
+    "nodeIp": "192.168.1.10",
+    "nodeHost": "192.168.1.10",
+    "nodePubkey": null,
+    "target": "test.com",
+    "requestId": null,
+    "status": "open",
+    "fundingAmount": 100000,
+    "mode": "mock"
+  },
+  {
+    "id": "channel-1774603852235",
+    "nodeId": "node-1",
+    "nodeIp": "192.168.1.10",
+    "nodeHost": "192.168.1.10",
+    "nodePubkey": null,
+    "target": "merchant.com",
+    "requestId": null,
+    "status": "open",
+    "fundingAmount": 100000,
+    "mode": "mock"
+  },
+  {
+    "id": "channel-1774604341832",
+    "nodeId": "node-1",
+    "nodeIp": "192.168.1.10",
+    "nodeHost": "192.168.1.10",
+    "nodePubkey": null,
+    "target": "cli-test.com",
+    "requestId": null,
+    "status": "open",
+    "fundingAmount": 100000,
+    "mode": "mock"
+  },
+  {
+    "id": "channel-1774604465596",
+    "nodeId": "node-1",
+    "nodeIp": "192.168.1.10",
+    "nodeHost": "192.168.1.10",
+    "nodePubkey": null,
+    "target": "cli-test.com",
+    "requestId": null,
+    "status": "open",
+    "fundingAmount": 100000,
+    "mode": "mock"
+  },
+  {
+    "id": "channel-1774605413968",
+    "nodeId": "node-1",
+    "nodeIp": "192.168.1.10",
+    "nodeHost": "192.168.1.10",
+    "nodePubkey": null,
+    "target": "merchant.test",
+    "requestId": null,
+    "status": "open",
+    "fundingAmount": 100000,
+    "mode": "mock"
+  },
+  {
+    "id": "channel-1774605465254",
+    "nodeId": "node-1",
+    "nodeIp": "192.168.1.10",
+    "nodeHost": "192.168.1.10",
+    "nodePubkey": null,
+    "target": "merchant.test",
+    "requestId": null,
+    "status": "open",
+    "fundingAmount": 100000,
+    "mode": "mock"
+  },
+  {
+    "id": "channel-1774606628107",
+    "nodeId": "node-1",
+    "nodeIp": "192.168.1.10",
+    "nodeHost": "192.168.1.10",
+    "nodePubkey": null,
+    "target": "first-tx.test",
+    "requestId": null,
+    "status": "open",
+    "fundingAmount": 100000,
+    "mode": "mock"
+  }
+]
