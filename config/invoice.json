@@ -1,0 +1,5 @@
+{
+  "currency": "USD",
+  "defaultAmount": 10,
+  "paymentTimeout": 600
+}
