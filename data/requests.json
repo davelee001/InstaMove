@@ -1,0 +1,9 @@
+[
+  {
+    "id": "req-1",
+    "domain": "example.com",
+    "payload": "94f5fb74a06641ed3002fbdcd40e2636cd6f6611c87f2deb5f8bbe22d323636c7555b16e92ad774554bec7cfe78fdb8912e05b351472c58ac17a38801e766eca",
+    "encrypted": true,
+    "status": "pending"
+  }
+]
