@@ -262,6 +262,42 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
           .status-good {
             color: #86efac;
           }
+          .toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(14, 165, 233, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          }
+          .toast.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+          }
+          .toast.success { 
+            background: rgba(245, 158, 11, 0.95); 
+            border-left: 4px solid #22c55e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .toast.success::before {
+            content: "✓";
+            color: #22c55e;
+            font-size: 1.2rem;
+            font-weight: 900;
+          }
+          .toast.error { background: rgba(239, 68, 68, 0.95); }
           .status-warn {
             color: #fdba74;
           }
@@ -293,6 +329,7 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
         </style>
       </head>
       <body>
+        <div id="toast" class="toast"></div>
         <main class="shell">
           <section class="hero">
             <div class="panel hero-main">
@@ -357,6 +394,15 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
             const form = document.getElementById("transaction-form");
             const output = document.getElementById("responseOutput");
             const hint = document.getElementById("formHint");
+            const toast = document.getElementById("toast");
+
+            function showToast(message, type = "success") {
+              toast.textContent = message;
+              toast.className = "toast show " + type;
+              setTimeout(() => {
+                toast.className = "toast " + type;
+              }, 4000);
+            }
             const paymentRequestInput = document.getElementById("paymentRequest");
 
             paymentRequestInput.addEventListener("input", () => {
@@ -384,23 +430,29 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
 
               try {
                 const response = await fetch("/request", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(body)
-                });
-
-                const data = await response.json();
-                renderJson(data);
-                
-                if (data.status === "ok") {
-                  const amount = data.amount || (data.decodedInvoice && data.decodedInvoice.amount) || "unknown amount";
-                  hint.textContent = "Sent " + amount + " sats successfully.";
+                  const successMsg = "Sent " + amount + " sats successfully.";
+                  hint.textContent = successMsg;
                   hint.style.color = "var(--good)";
+                  showToast(successMsg, "success");
                 } else {
                   hint.style.color = "var(--warn)";
                   const msg = data.message || "";
+                  let errText = "";
                   if (msg.includes("Unrecognized local invoice")) {
-                    hint.textContent = "Unrecognized invoice";
+                    errText = "Unrecognized invoice";
+                  } else if (val.startsWith("lnbcrt") && val.length < 20) {
+                    errText = "Incorrect invoice";
+                  } else {
+                    errText = msg || "Invoice failed.";
+                  }
+                  hint.textContent = errText;
+                  showToast(errText, "error");
+                }
+              } catch (error) {
+                renderJson({ status: "error", message: error.message });
+                hint.textContent = "Request failed.";
+                hint.style.color = "var(--warn)";
+                showToast("Request failed", "error")ized invoice";
                   } else if (val.startsWith("lnbcrt") && val.length < 20) {
                     hint.textContent = "Incorrect invoice";
                   } else {
