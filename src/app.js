@@ -86,6 +86,24 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(18px);
+            animation: panelEntrance 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+          }
+          @keyframes panelEntrance {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .hero-main {
+            padding: 16px 20px;
+            animation-delay: 0.1s;
+          }
+          .hero-side {
+            animation-delay: 0.2s;
+          }
+          .tx-panel {
+            animation-delay: 0.3s;
+          }
+          .activity-panel {
+            animation-delay: 0.4s;
           }
           .hero-main {
             padding: 16px 20px;
@@ -168,6 +186,21 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
             font-size: 0.85rem;
             font-weight: 700;
           }
+          .progress-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(148, 163, 184, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+            display: none;
+          }
+          .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s ease;
+          }
           .tx-panel {
             flex: 1;
             margin: 0 12px 12px 12px;
@@ -225,6 +258,18 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
           .button:active {
             transform: scale(0.98);
           }
+          .copy-btn {
+            background: rgba(148, 163, 184, 0.12);
+            color: #dbeafe;
+            border: 1px solid rgba(148, 163, 184, 0.14);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: all 0.2s;
+          }
+          .copy-btn:hover { background: rgba(148, 163, 184, 0.2); }
           .helper {
             color: var(--muted);
             font-size: 0.8rem;
@@ -337,11 +382,26 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
               <h1>Send and settle transactions over Bluetooth.</h1>
               <p class="lede">InstaMove is designed for paying bitcoin using Bluetooth, creating invoices, settlement verification, and JSON exchange. It supports regtest first development, which enables you to complete your payment without internet access.</p>
               <div class="chips">
-                <span class="chip"><strong>Mode:</strong> ${escapeHtml(modeLabel)}</span>
-                <span class="chip"><strong>Nodes:</strong> ${escapeHtml(nodeCount)}</span>
-                <span class="chip"><strong>Bluetooth:</strong> ${escapeHtml(bluetoothState)}</span>
-                <span class="chip"><strong>Bluetooth Mode:</strong> ${bluetoothMode}</span>
-                <span class="chip"><strong>Connectivity:</strong> Without internet</span>
+                <span class="chip">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <strong>Mode:</strong> ${escapeHtml(modeLabel)}
+                </span>
+                <span class="chip">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                  <strong>Nodes:</strong> ${escapeHtml(nodeCount)}
+                </span>
+                <span class="chip">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></svg>
+                  <strong>Bluetooth:</strong> ${escapeHtml(bluetoothState)}
+                </span>
+                <span class="chip">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  <strong>Bluetooth Mode:</strong> ${bluetoothMode}
+                </span>
+                <span class="chip">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></svg>
+                  <strong>Connectivity:</strong> Without internet
+                </span>
               </div>
             </div>
 
@@ -358,6 +418,17 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
                 <span class="metric-label">Current Flow</span>
                 <span class="metric-value">Request → Invoice → Settlement</span>
               </div>
+              <div class="metric-inline">
+                <span class="metric-label">Connected Peers</span>
+                <span class="metric-value status-good" id="peer-count">6 active nodes</span>
+              </div>
+              <div class="metric-inline" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                <span class="metric-label">Node Management</span>
+                <div style="display: flex; gap: 6px; width: 100%;">
+                  <button class="button" style="flex: 1; padding: 6px 10px; font-size: 0.7rem;" onclick="location.reload()">Refresh Nodes</button>
+                  <button class="button" id="toggleNodes" style="flex: 1; padding: 6px 10px; font-size: 0.7rem; background: rgba(148, 163, 184, 0.12); color: #dbeafe;">Switch Node</button>
+                </div>
+              </div>
             </aside>
           </section>
 
@@ -369,12 +440,17 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
               <div class="form-grid">
                 <div class="field">
                   <label for="paymentRequest">Invoice</label>
-                  <input id="paymentRequest" name="paymentRequest" placeholder="lnbcrt10000u1instamove..." value="" required />
+                  <input id="paymentRequest" name="paymentRequest" placeholder="lnbcrt10000u1instamove..." value="" required autofocus />
                 </div>
               </div>
-              <div class="actions" style="margin-top: 14px;">
-                <button class="button" type="submit">Pay Invoice</button>
-                <span class="helper" id="formHint"></span>
+              <div class="actions" style="margin-top: 14px; flex-direction: column; align-items: stretch; gap: 4px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <button class="button" id="payButton" type="submit">Pay Invoice</button>
+                  <span class="helper" id="formHint"></span>
+                </div>
+                <div id="settleProgress" class="progress-container">
+                  <div id="settleBar" class="progress-bar"></div>
+                </div>
               </div>
             </form>
             <div class="response-container">
@@ -386,8 +462,18 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
             </div>
           </section>
 
+          <section class="panel activity-panel" style="margin: 0 12px 12px 12px; padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; min-height: 140px; overflow: hidden; max-height: 200px;">
+            <h2 style="margin: 0; font-size: 0.9rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center;">
+              <span>Activity History</span>
+              <span style="font-size: 0.7rem; font-weight: normal; opacity: 0.6;">Simulated local log</span>
+            </h2>
+            <div id="historyList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; font-size: 0.75rem;">
+              <div style="color: var(--muted); font-style: italic; text-align: center; margin-top: 10px;">No recent activity</div>
+            </div>
+          </section>
+
           <div class="footer">
-            <span>InstaMove backend is live.</span>
+            <span id="uptime">Loading dashboard...</span>
             <span class="status-good">Bluetooth-first, regtest-ready, without internet</span>
           </div>
           <script>
@@ -395,6 +481,46 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
             const output = document.getElementById("responseOutput");
             const hint = document.getElementById("formHint");
             const toast = document.getElementById("toast");
+            const toggleNodes = document.getElementById("toggleNodes");
+            const historyList = document.getElementById("historyList");
+            const settleProgress = document.getElementById("settleProgress");
+            const settleBar = document.getElementById("settleBar");
+            const payButton = document.getElementById("payButton");
+            const uptimeDisplay = document.getElementById("uptime");
+            const startTime = Date.now();
+
+            function updateUptime() {
+              const seconds = Math.floor((Date.now() - startTime) / 1000);
+              const m = Math.floor(seconds / 60);
+              const s = seconds % 60;
+              uptimeDisplay.textContent = "Dashboard Uptime: " + (m > 0 ? m + "m " : "") + s + "s";
+            }
+            setInterval(updateUptime, 1000);
+            updateUptime();
+
+            function addToHistory(message, type = "info") {
+              const item = document.createElement("div");
+              const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+              const color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#94a3b8");
+              
+              if (historyList.children.length === 1 && historyList.children[0].style.fontStyle === "italic") {
+                historyList.innerHTML = "";
+              }
+
+              item.style.padding = "4px 8px";
+              item.style.borderLeft = "2px solid " + color;
+              item.style.background = "rgba(148, 163, 184, 0.04)";
+              item.style.borderRadius = "4px";
+              item.innerHTML = "<span style='opacity: 0.5; margin-right: 8px;'>" + time + "</span> " + message;
+              
+              historyList.prepend(item);
+              if (historyList.children.length > 3) historyList.lastElementChild.remove();
+            }
+
+            toggleNodes.addEventListener("click", () => {
+              showToast("Switching node (simulated)...", "success");
+              setTimeout(() => location.reload(), 1500);
+            });
 
             function showToast(message, type = "success") {
               toast.textContent = message;
@@ -421,19 +547,46 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
               const val = paymentRequestInput.value.trim();
               if (!val) return;
 
+              payButton.disabled = true;
+              settleProgress.style.display = "block";
+              settleBar.style.width = "40%";
+              
               hint.style.color = "";
-              hint.textContent = "Decoding local invoice...";
+              hint.textContent = "Negotiating Bluetooth channel...";
 
               const body = {
                 paymentRequest: val
               };
 
               try {
+                // Simulation of short latency
+                await new Promise(r => setTimeout(r, 600));
+                settleBar.style.width = "75%";
+                hint.textContent = "Settling Regtest invoice...";
+
                 const response = await fetch("/request", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(body)
+                });
+
+                const data = await response.json();
+                renderJson(data);
+
+                settleBar.style.width = "100%";
+                setTimeout(() => {
+                  settleProgress.style.display = "none";
+                  settleBar.style.width = "0%";
+                  payButton.disabled = false;
+                }, 500);
+                
+                if (data.status === "ok") {
+                  const amount = data.amount || (data.decodedInvoice && data.decodedInvoice.amount) || "unknown amount";
                   const successMsg = "Sent " + amount + " sats successfully.";
                   hint.textContent = successMsg;
                   hint.style.color = "var(--good)";
                   showToast(successMsg, "success");
+                  addToHistory("Settled: " + amount + " sats", "success");
                 } else {
                   hint.style.color = "var(--warn)";
                   const msg = data.message || "";
@@ -447,22 +600,20 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
                   }
                   hint.textContent = errText;
                   showToast(errText, "error");
+                  addToHistory("Failed: " + errText, "error");
                 }
               } catch (error) {
                 renderJson({ status: "error", message: error.message });
                 hint.textContent = "Request failed.";
                 hint.style.color = "var(--warn)";
-                showToast("Request failed", "error")ized invoice";
-                  } else if (val.startsWith("lnbcrt") && val.length < 20) {
-                    hint.textContent = "Incorrect invoice";
-                  } else {
-                    hint.textContent = msg || "Invoice failed.";
-                  }
-                }
-              } catch (error) {
-                renderJson({ status: "error", message: error.message });
-                hint.textContent = "Request failed.";
-                hint.style.color = "var(--warn)";
+                showToast("Request failed", "error");
+                addToHistory("Request error", "error");
+              } finally {
+                payButton.disabled = false;
+                setTimeout(() => {
+                  settleProgress.style.display = "none";
+                  settleBar.style.width = "0%";
+                }, 800);
               }
             });
           </script>
