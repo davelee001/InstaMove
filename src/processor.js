@@ -1,149 +1,170 @@
 const encryption = require("./encryption");
-const channel = require("./channel");
 const invoice = require("./invoice");
 const lightning = require("./lightning");
 const notifier = require("./notifier");
 const nodeService = require("./node");
+const { AppError } = require("./errors");
 const { readJson, writeJson } = require("./storage");
-const networkConfig = require("../config/network.json");
 const invoiceConfig = require("../config/invoice.json");
 
 function resolvePayloadSource(data, storedRequest) {
   return data.payload || storedRequest?.payload || storedRequest?.encryptedPayload || null;
 }
 
-async function handleRequest(data) {
+function publicPayment(payment) {
+  return {
+    success: payment.success,
+    paymentId: payment.paymentId,
+    status: payment.status,
+    mode: payment.mode
+  };
+}
+
+function publicDecodedInvoice(decoded) {
+  return {
+    amount: decoded.amount,
+    currency: decoded.currency,
+    memo: decoded.memo,
+    destination: decoded.destination,
+    expiry: decoded.expiry,
+    mode: decoded.mode
+  };
+}
+
+async function handlePayment(data, storedRequest, invoices) {
+  const normalizedPaymentRequest = data.paymentRequest.toLowerCase();
+  const ownedInvoice = invoices.find(
+    (item) => String(item.paymentRequest || "").toLowerCase() === normalizedPaymentRequest
+  );
+  if (ownedInvoice) {
+    throw new AppError(409, "SELF_PAYMENT_NOT_ALLOWED", "The active node cannot pay an invoice it created");
+  }
+
+  const settlement = await lightning.settlePaymentRequest({
+    paymentRequest: data.paymentRequest,
+    fallbackAmount: data.amount
+  });
+
+  if (!settlement.payment.success || settlement.status !== "ok") {
+    throw new AppError(502, "PAYMENT_FAILED", "The Lightning payment was not settled");
+  }
+
+  return {
+    status: "ok",
+    requestProcessed: true,
+    connectionSuccess: true,
+    connectionStatus: "payment settled",
+    invoiceCreated: false,
+    invoiceSettled: true,
+    channelCreated: false,
+    lightningMode: settlement.mode,
+    amount: settlement.amount,
+    amountLabel: settlement.amountLabel,
+    sentTo: settlement.sentTo,
+    message: settlement.message,
+    request: {
+      id: storedRequest?.id || data.requestId || null,
+      paymentRequest: data.paymentRequest
+    },
+    payment: publicPayment(settlement.payment),
+    decodedInvoice: publicDecodedInvoice(settlement.decoded)
+  };
+}
+
+async function handleInvoiceCreation(data, storedRequest, requests) {
+  const payload = resolvePayloadSource(data, storedRequest);
+  let decrypted;
+
   try {
-    const requests = await readJson("data/requests.json", []);
-    const channels = await readJson("data/channels.json", []);
-    const storedRequest = requests.find(
-      (request) => request.id === data.requestId || request.id === data.id || request.domain === data.domain
+    decrypted = payload
+      ? encryption.decrypt(payload)
+      : {
+          domain: data.domain || storedRequest?.domain || null,
+          address: data.address || storedRequest?.address || null
+        };
+  } catch (error) {
+    throw new AppError(422, "INVALID_ENCRYPTED_PAYLOAD", "The encrypted request payload is invalid");
+  }
+
+  if (!decrypted.domain && !decrypted.address) {
+    throw new AppError(422, "MISSING_DESTINATION", "The invoice request has no domain or address");
+  }
+
+  const selectedNode = data.nodeId
+    ? await nodeService.getNodeById(data.nodeId)
+    : await nodeService.getActiveNode();
+  if (!selectedNode) {
+    throw new AppError(409, "NO_ACTIVE_NODE", "No active Lightning node is configured");
+  }
+
+  const invoiceDraft = await invoice.create({
+    requestId: storedRequest?.id || data.requestId || null,
+    amount: data.amount || invoiceConfig.defaultAmount,
+    memo: data.memo
+  });
+  const invoiceRecord = {
+    ...invoiceDraft,
+    nodeId: selectedNode.id,
+    origin: "local-node",
+    status: "created",
+    settled: false,
+    createdAt: new Date().toISOString()
+  };
+
+  const invoices = await readJson("data/invoices.json", []);
+  await writeJson("data/invoices.json", [...invoices, invoiceRecord]);
+
+  if (storedRequest) {
+    const updatedRequests = requests.map((request) =>
+      request.id === storedRequest.id
+        ? {
+            ...request,
+            status: "invoice-created",
+            settled: false,
+            invoiceId: invoiceRecord.id
+          }
+        : request
+    );
+    await writeJson("data/requests.json", updatedRequests);
+  }
+
+  const notification = notifier.send("Invoice created");
+  return {
+    status: "ok",
+    requestProcessed: true,
+    connectionSuccess: false,
+    connectionStatus: "invoice awaiting external payment",
+    invoiceCreated: true,
+    invoiceSettled: false,
+    channelCreated: false,
+    lightningMode: invoiceRecord.mode,
+    request: {
+      id: storedRequest?.id || data.requestId || null,
+      decrypted
+    },
+    notification,
+    node: selectedNode,
+    invoice: invoiceRecord
+  };
+}
+
+async function handleRequest(data) {
+  const [requests, invoices] = await Promise.all([
+    readJson("data/requests.json", []),
+    readJson("data/invoices.json", [])
+  ]);
+  const storedRequest =
+    requests.find(
+      (request) =>
+        (data.requestId && request.id === data.requestId) ||
+        (data.domain && request.domain === data.domain)
     ) || null;
 
-    const payload = resolvePayloadSource(data, storedRequest);
-    const decrypted = payload ? encryption.decrypt(payload) : {
-      domain: data.domain || storedRequest?.domain || null,
-      address: data.address || storedRequest?.address || null
-    };
-
-    if (data.paymentRequest || data.invoiceRequest || data.bolt11) {
-      const paymentRequest = data.paymentRequest || data.invoiceRequest || data.bolt11;
-
-      const settlement = await lightning.settlePaymentRequest({
-        paymentRequest,
-        fallbackAmount: Number(data.amount || invoiceConfig.defaultAmount)
-      });
-
-      const connectionStatus = settlement.payment?.success ? "connection successful" : "connection failed";
-
-      return {
-        status: settlement.status,
-        requestProcessed: true,
-        connectionSuccess: Boolean(settlement.payment?.success),
-        connectionStatus,
-        invoiceCreated: false,
-        invoiceSettled: settlement.status === "ok",
-        lightningMode: settlement.mode || "mock",
-        amount: settlement.amount,
-        amountLabel: settlement.amountLabel,
-        sentTo: settlement.sentTo,
-        message: settlement.message,
-        request: {
-          id: storedRequest?.id || data.requestId || data.id || null,
-          paymentRequest,
-          decrypted
-        },
-        payment: settlement.payment,
-        decodedInvoice: settlement.decoded,
-        transaction: settlement
-      };
-    }
-
-    if (!decrypted.domain && !decrypted.address) {
-      return {
-        status: "error",
-        message: "No request payload or address found"
-      };
-    }
-
-    const selectedNode = data.nodeId
-      ? await nodeService.getNodeById(data.nodeId)
-      : await nodeService.getActiveNode();
-
-    if (!selectedNode) {
-      return {
-        status: "error",
-        message: "No Lightning node is configured"
-      };
-    }
-
-    const channelRecord = await channel.create({
-      ...decrypted,
-      nodeId: selectedNode?.id || null,
-      nodeIp: selectedNode?.ip || null,
-      nodeHost: selectedNode?.host || selectedNode?.ip || null,
-      nodePubkey: selectedNode?.pubkey || null,
-      attempts: networkConfig.retryAttempts,
-      timeoutMs: networkConfig.timeoutMs
-    });
-
-    await writeJson("data/channels.json", [...channels, channelRecord]);
-
-    const invoiceDraft = await invoice.create({
-      requestId: storedRequest?.id || data.requestId || data.id || null,
-      currency: invoiceConfig.currency,
-      amount: invoiceConfig.defaultAmount
-    });
-
-    const settledInvoice = await invoice.settle(invoiceDraft, {
-      nodeId: selectedNode?.id || null,
-      paymentRequest: data.paymentRequest || data.settlementRequest || null
-    });
-
-    const connection = notifier.send("Connection successful");
-    const connectionStatus = connection.success ? "connection successful" : "connection failed";
-
-    if (storedRequest) {
-      const updatedRequests = requests.map((request) => {
-        if (request.id !== storedRequest.id) {
-          return request;
-        }
-
-        return {
-          ...request,
-          status: "processed",
-          settled: true,
-          channelId: channelRecord.id,
-          invoiceId: settledInvoice.id
-        };
-      });
-
-      await writeJson("data/requests.json", updatedRequests);
-    }
-
-    return {
-      status: "ok",
-      requestProcessed: true,
-      connectionSuccess: connection.success,
-      connectionStatus,
-      invoiceCreated: invoiceDraft.created,
-      invoiceSettled: Boolean(settledInvoice.settled),
-      lightningMode: settledInvoice.mode || invoiceDraft.mode || "mock",
-      request: {
-        id: storedRequest?.id || data.requestId || data.id || null,
-        decrypted
-      },
-      connection,
-      node: selectedNode,
-      channel: channelRecord,
-      invoice: settledInvoice
-    };
-  } catch (error) {
-    return {
-      status: "error",
-      message: error.message
-    };
+  if (data.paymentRequest) {
+    return handlePayment(data, storedRequest, invoices);
   }
+
+  return handleInvoiceCreation(data, storedRequest, requests);
 }
 
 module.exports = { handleRequest };
