@@ -1,11 +1,49 @@
+const crypto = require("crypto");
 const express = require("express");
 const processor = require("./processor");
 const nodeService = require("./node");
+const lightning = require("./lightning");
 const { initBluetooth, getBluetooth } = require("./bluetooth");
-const lightningConfig = require("../config/lightning.json");
+const { authorize } = require("./auth");
+const { AppError, normalizeError, toErrorResponse } = require("./errors");
+const idempotency = require("./idempotency");
+const { createAdminRateLimiter, createPaymentRateLimiter } = require("./rate-limit");
+const {
+  validateBluetoothBody,
+  validateIdempotencyKey,
+  validateNodeBody,
+  validateNodeId,
+  validateRequestBody
+} = require("./validation");
+
+lightning.assertConfiguration();
 
 const app = express();
-app.use(express.json());
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+  const suppliedRequestId = req.get("x-request-id");
+  req.requestId = /^[A-Za-z0-9._:-]{1,128}$/.test(suppliedRequestId || "")
+    ? suppliedRequestId
+    : crypto.randomUUID();
+  res.set("X-Request-Id", req.requestId);
+  next();
+});
+app.use(express.json({ limit: "32kb", strict: true }));
+
+const paymentRateLimit = createPaymentRateLimiter();
+const adminRateLimit = createAdminRateLimiter();
+
+function asyncHandler(handler) {
+  return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+}
+
+function safeOperationError(error, requestId) {
+  const normalized = normalizeError(error);
+  if (normalized.statusCode === 500) {
+    console.error(`[${requestId}] internal request failure (${error?.name || "Error"})`);
+  }
+  return toErrorResponse(normalized, requestId);
+}
 
 function logJsonResponse(source, payload) {
   console.log(`[${source}] response:`);
@@ -22,7 +60,7 @@ function escapeHtml(value) {
 }
 
 function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
-  const currentMode = (process.env.LIGHTNING_MODE || lightningConfig.mode || "mock").toLowerCase();
+  const currentMode = lightning.getMode();
   const modeLabel = currentMode === "regtest" ? "Regtest" : currentMode === "lnd" ? "LND" : "Mock";
   const activeNodeLabel = activeNode ? `${escapeHtml(activeNode.id)}${activeNode.ip ? ` • ${escapeHtml(activeNode.ip)}` : ""}` : "No active node";
   const bluetoothMode = bluetoothStatus ? escapeHtml(bluetoothStatus.mode) : "unknown";
@@ -442,6 +480,10 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
                   <label for="paymentRequest">Invoice</label>
                   <input id="paymentRequest" name="paymentRequest" placeholder="lnbcrt10000u1instamove..." value="" required autofocus />
                 </div>
+                <div class="field">
+                  <label for="accessToken">Payment access token</label>
+                  <input id="accessToken" name="accessToken" type="password" autocomplete="current-password" required />
+                </div>
               </div>
               <div class="actions" style="margin-top: 14px; flex-direction: column; align-items: stretch; gap: 4px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
@@ -487,7 +529,9 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
             const settleBar = document.getElementById("settleBar");
             const payButton = document.getElementById("payButton");
             const uptimeDisplay = document.getElementById("uptime");
+            const accessTokenInput = document.getElementById("accessToken");
             const startTime = Date.now();
+            let pendingPayment = null;
 
             function updateUptime() {
               const seconds = Math.floor((Date.now() - startTime) / 1000);
@@ -552,25 +596,34 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus }) {
               settleBar.style.width = "40%";
               
               hint.style.color = "";
-              hint.textContent = "Negotiating Bluetooth channel...";
+              hint.textContent = "Validating invoice...";
 
               const body = {
                 paymentRequest: val
               };
+              const idempotencyKey = pendingPayment && pendingPayment.invoice === val
+                ? pendingPayment.key
+                : crypto.randomUUID();
+              pendingPayment = { invoice: val, key: idempotencyKey };
 
               try {
                 // Simulation of short latency
                 await new Promise(r => setTimeout(r, 600));
                 settleBar.style.width = "75%";
-                hint.textContent = "Settling Regtest invoice...";
+                hint.textContent = "Submitting Lightning payment...";
 
                 const response = await fetch("/request", {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: {
+                    "Authorization": "Bearer " + accessTokenInput.value,
+                    "Content-Type": "application/json",
+                    "Idempotency-Key": idempotencyKey
+                  },
                   body: JSON.stringify(body)
                 });
 
                 const data = await response.json();
+                pendingPayment = null;
                 renderJson(data);
 
                 settleBar.style.width = "100%";
@@ -628,18 +681,31 @@ const bluetooth = initBluetooth({ name: "InstaMove" });
 
 // Handle Bluetooth incoming requests
 bluetooth.on("request", async (payload) => {
+  const requestId = crypto.randomUUID();
   try {
-    console.log("Bluetooth request received:", payload);
-    const result = await processor.handleRequest(payload);
-    logJsonResponse("bluetooth", result);
-    bluetooth.sendResponse(result);
+    validateBluetoothBody(payload);
+    const { idempotencyKey: rawKey, ...requestPayload } = payload;
+    const key = validateIdempotencyKey(rawKey);
+    const validated = validateRequestBody(requestPayload);
+    const execution = await idempotency.execute({
+      key,
+      payload: validated,
+      operation: async () => {
+        try {
+          return { statusCode: 200, body: await processor.handleRequest(validated) };
+        } catch (error) {
+          return safeOperationError(error, requestId);
+        }
+      }
+    });
+    logJsonResponse("bluetooth", execution.result.body);
+    bluetooth.sendResponse(execution.result.body);
   } catch (error) {
-    console.error("Bluetooth request error:", error);
-    bluetooth.sendResponse({ status: "error", message: error.message });
+    bluetooth.sendResponse(toErrorResponse(error, requestId).body);
   }
 });
 
-app.get("/", async (req, res) => {
+app.get("/", asyncHandler(async (req, res) => {
   const [nodes, bluetoothStatus] = await Promise.all([
     nodeService.listNodes(),
     Promise.resolve(getBluetooth()?.getStatus() || null)
@@ -653,77 +719,95 @@ app.get("/", async (req, res) => {
       bluetoothStatus
     })
   );
-});
+}));
 
-app.post("/request", async (req, res) => {
-  const result = await processor.handleRequest(req.body);
-  logJsonResponse("http", result);
-  res.status(result.status === "error" ? 400 : 200).json(result);
-});
+app.post(
+  "/request",
+  paymentRateLimit,
+  authorize("payment"),
+  asyncHandler(async (req, res) => {
+    const key = validateIdempotencyKey(req.get("idempotency-key"));
+    const payload = validateRequestBody(req.body);
+    const execution = await idempotency.execute({
+      key,
+      payload,
+      operation: async () => {
+        try {
+          return { statusCode: 200, body: await processor.handleRequest(payload) };
+        } catch (error) {
+          return safeOperationError(error, req.requestId);
+        }
+      }
+    });
 
-app.get("/nodes", async (req, res) => {
+    res.set("Idempotency-Replayed", String(execution.replayed));
+    logJsonResponse("http", execution.result.body);
+    res.status(execution.result.statusCode).json(execution.result.body);
+  })
+);
+
+app.get("/nodes", adminRateLimit, authorize("admin"), asyncHandler(async (req, res) => {
   const nodes = await nodeService.listNodes();
   res.json({ status: "ok", nodes });
-});
+}));
 
-app.post("/nodes", async (req, res) => {
-  try {
-    const node = await nodeService.registerNode(req.body || {});
-    res.status(201).json({ status: "ok", node });
-  } catch (error) {
-    res.status(400).json({ status: "error", message: error.message });
-  }
-});
+app.post("/nodes", adminRateLimit, authorize("admin"), asyncHandler(async (req, res) => {
+  const node = await nodeService.registerNode(validateNodeBody(req.body));
+  res.status(201).json({ status: "ok", node });
+}));
 
-app.post("/nodes/:id/activate", async (req, res) => {
-  try {
-    const node = await nodeService.activateNode(req.params.id);
-    res.json({ status: "ok", node });
-  } catch (error) {
-    res.status(400).json({ status: "error", message: error.message });
-  }
-});
+app.post("/nodes/:id/activate", adminRateLimit, authorize("admin"), asyncHandler(async (req, res) => {
+  const node = await nodeService.activateNode(validateNodeId(req.params.id));
+  res.json({ status: "ok", node });
+}));
 
-app.get("/bluetooth/status", (req, res) => {
+app.get("/bluetooth/status", adminRateLimit, authorize("admin"), (req, res) => {
   const bt = getBluetooth();
   if (bt) {
     res.json({ status: "ok", bluetooth: bt.getStatus() });
   } else {
-    res.json({ status: "error", message: "Bluetooth not initialized" });
+    throw new AppError(503, "BLUETOOTH_UNAVAILABLE", "Bluetooth is not available");
   }
 });
 
-app.post("/bluetooth/send", (req, res) => {
+app.post("/bluetooth/send", adminRateLimit, authorize("admin"), (req, res) => {
   const bt = getBluetooth();
   if (!bt) {
-    return res.status(400).json({ status: "error", message: "Bluetooth not initialized" });
+    throw new AppError(503, "BLUETOOTH_UNAVAILABLE", "Bluetooth is not available");
   }
 
-  try {
-    bt.sendResponse(req.body);
-    logJsonResponse("bluetooth-send", req.body);
-    res.json({ status: "ok", message: "Response sent over Bluetooth" });
-  } catch (error) {
-    res.status(400).json({ status: "error", message: error.message });
-  }
+  const payload = validateBluetoothBody(req.body);
+  bt.sendResponse(payload);
+  res.json({ status: "ok", message: "Response sent over Bluetooth" });
 });
 
-app.post("/bluetooth/receive", async (req, res) => {
+app.post("/bluetooth/receive", adminRateLimit, authorize("admin"), (req, res) => {
   const bt = getBluetooth();
   if (!bt) {
-    return res.status(400).json({ status: "error", message: "Bluetooth not initialized" });
+    throw new AppError(503, "BLUETOOTH_UNAVAILABLE", "Bluetooth is not available");
   }
 
-  try {
-    // Simulate receiving data from Bluetooth client
-    bt.receiveData(req.body);
-    console.log("[bluetooth-receive] payload:");
-    console.log(JSON.stringify(req.body, null, 2));
-    res.json({ status: "ok", message: "Data received from Bluetooth" });
-  } catch (error) {
-    res.status(400).json({ status: "error", message: error.message });
-  }
+  const payload = validateBluetoothBody(req.body);
+  validateIdempotencyKey(payload.idempotencyKey);
+  bt.receiveData(payload);
+  res.status(202).json({ status: "ok", message: "Bluetooth request accepted" });
 });
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.use((req, res, next) => {
+  next(new AppError(404, "NOT_FOUND", "Route not found"));
+});
+
+app.use((error, req, res, next) => {
+  const response = safeOperationError(error, req.requestId || crypto.randomUUID());
+  res.status(response.statusCode).json(response.body);
+});
+
+function startServer(port = process.env.PORT || 4000) {
+  return app.listen(port, () => console.log(`Server running on port ${port}`));
+}
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, startServer };
