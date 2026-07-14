@@ -5,7 +5,7 @@ async function create(data) {
   return lightning.createInvoice({
     requestId: data.requestId || null,
     amount: Number(data.amount || config.defaultAmount),
-    memo: data.memo || config.currency || "InstaMove payment",
+    memo: data.memo || "InstaMove payment",
     expirySeconds: config.paymentTimeout || 600
   });
 }
