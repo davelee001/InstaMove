@@ -1,5 +1,6 @@
 {
   "currency": "USD",
   "defaultAmount": 10,
+  "maxAmountSats": 1000000,
   "paymentTimeout": 600
 }
