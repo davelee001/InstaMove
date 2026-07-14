@@ -74,3 +74,5 @@ Example:
 	"paymentRequest": "lnbcrt5000u1instamoved8353f1c82f4a3bb"
 }
 ```
+
+Creating an invoice no longer opens a Lightning channel or pays that invoice from the same node. Created invoices remain pending until an external payer settles them. Channel management must be performed separately from the request flow.
