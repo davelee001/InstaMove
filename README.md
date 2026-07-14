@@ -4,17 +4,22 @@ InstaMove is a Node.js backend and landing page for testing Lightning-style invo
 
 It accepts a request, processes the payload, and returns a JSON response. In local mode, the app recognizes built-in invoice IDs that map to fixed amounts.
 
-By default it runs in regtest mode. To connect it to a real Lightning node, set:
+By default it runs in mock mode. Mock mode never contacts LND or moves real funds.
 
-- `LIGHTNING_MODE=regtest`
+To connect it to a Lightning node, explicitly set all variables required by the selected mode:
+
+- `LIGHTNING_MODE=regtest` or `LIGHTNING_MODE=lnd`
 - `LND_REST_URL`
 - `LND_MACAROON`
+
+The server stops during startup if `regtest` or `lnd` is selected without both LND credentials. Use `LIGHTNING_MODE=mock` explicitly when LND is not available.
 
 Optional:
 
 - `LND_PEER_PUBKEY`
 - `LND_CHANNEL_FUNDING_SATS`
 - `LIGHTNING_AUTO_SETTLE=false`
+- `MAX_PAYMENT_SATS=1000000`
 
 Regtest keeps the payment flow off real money while still using real Lightning APIs when your regtest LND nodes are connected.
 
