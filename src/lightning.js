@@ -4,6 +4,11 @@ const https = require("https");
 const http = require("http");
 const path = require("path");
 const lightningConfig = require("../config/lightning.json");
+const { AppError } = require("./errors");
+const { getMaxPaymentSats, validateInvoice } = require("./validation");
+
+const SUPPORTED_MODES = new Set(["mock", "regtest", "lnd"]);
+const LND_MODES = new Set(["regtest", "lnd"]);
 
 function buildLocalInvoice(amount) {
   const suffix = crypto.createHash("sha256").update(`instamove:${amount}`).digest("hex").slice(0, 16);
@@ -28,13 +33,37 @@ function getMode() {
   return (process.env.LIGHTNING_MODE || lightningConfig.mode || "mock").toLowerCase();
 }
 
-function isRealMode() {
+function assertConfiguration() {
   const mode = getMode();
-  return (mode === "lnd" || mode === "regtest") && Boolean(process.env.LND_REST_URL) && Boolean(process.env.LND_MACAROON);
+
+  if (!SUPPORTED_MODES.has(mode)) {
+    throw new Error(
+      `Unsupported LIGHTNING_MODE "${mode}". Expected one of: mock, regtest, lnd`
+    );
+  }
+
+  if (LND_MODES.has(mode)) {
+    const missing = ["LND_REST_URL", "LND_MACAROON"].filter(
+      (name) => !String(process.env[name] || "").trim()
+    );
+
+    if (missing.length > 0) {
+      throw new Error(
+        `LIGHTNING_MODE=${mode} requires ${missing.join(" and ")}. ` +
+          "Set the missing environment variables or use LIGHTNING_MODE=mock explicitly"
+      );
+    }
+  }
+
+  return mode;
+}
+
+function isRealMode() {
+  return LND_MODES.has(assertConfiguration());
 }
 
 function getRuntimeMode() {
-  return getMode() === "regtest" ? "regtest" : "lnd";
+  return assertConfiguration();
 }
 
 function readMacaroonHeaderValue(source) {
@@ -154,6 +183,8 @@ async function createInvoice({ requestId, amount, memo, expirySeconds }) {
 }
 
 async function payInvoice(paymentRequest) {
+  const normalizedPaymentRequest = validateInvoice(paymentRequest);
+
   if (!isRealMode()) {
     return {
       success: true,
@@ -166,35 +197,34 @@ async function payInvoice(paymentRequest) {
   const response = await callLnd("/v1/channels/transactions", {
     method: "POST",
     body: {
-      payment_request: paymentRequest,
+      payment_request: normalizedPaymentRequest,
       fee_limit_sat: Number(process.env.LND_FEE_LIMIT_SAT || lightningConfig.feeLimitSat || 20)
     }
   });
 
+  const failed = Boolean(response.payment_error) || String(response.status || "").toUpperCase() === "FAILED";
+
   return {
-    success: true,
+    success: !failed,
     paymentId: response.payment_hash || response.payment_preimage || `pay-${Date.now()}`,
-    status: response.payment_error ? "failed" : "settled",
-    raw: response,
+    status: failed ? "failed" : "settled",
     mode: getRuntimeMode()
   };
 }
 
 async function decodeInvoice(paymentRequest, fallbackAmount) {
-  if (!paymentRequest) {
-    throw new Error("paymentRequest is required to decode an invoice");
-  }
+  const normalizedPaymentRequest = validateInvoice(paymentRequest);
 
   if (!isRealMode()) {
-    const localAmount = getLocalInvoiceAmount(paymentRequest);
+    const localAmount = getLocalInvoiceAmount(normalizedPaymentRequest);
     if (localAmount == null) {
-      throw new Error(`Unrecognized local invoice: ${paymentRequest}`);
+      throw new AppError(422, "UNRECOGNIZED_INVOICE", "The invoice is not available in mock mode");
     }
 
     const amount = Number(localAmount);
 
     return {
-      paymentRequest,
+      paymentRequest: normalizedPaymentRequest,
       amount,
       currency: "sats",
       memo: lightningConfig.invoiceMemo,
@@ -204,11 +234,11 @@ async function decodeInvoice(paymentRequest, fallbackAmount) {
     };
   }
 
-  const response = await callLnd(`/v1/payreq/${encodeURIComponent(paymentRequest)}`);
+  const response = await callLnd(`/v1/payreq/${encodeURIComponent(normalizedPaymentRequest)}`);
   const amount = Number(response.num_satoshis || response.num_sats || fallbackAmount || 0);
 
   return {
-    paymentRequest,
+    paymentRequest: normalizedPaymentRequest,
     amount,
     currency: "sats",
     memo: response.description || response.memo || lightningConfig.invoiceMemo,
@@ -330,6 +360,13 @@ async function settleInvoice(invoiceRecord, paymentRequest) {
 
   const requestToPay = paymentRequest || (shouldAutoSettle ? invoiceRecord.paymentRequest : null);
 
+  if (
+    requestToPay &&
+    String(requestToPay).toLowerCase() === String(invoiceRecord.paymentRequest || "").toLowerCase()
+  ) {
+    throw new AppError(409, "SELF_PAYMENT_NOT_ALLOWED", "The active node cannot pay an invoice it created");
+  }
+
   if (!requestToPay) {
     return {
       ...invoiceRecord,
@@ -361,11 +398,18 @@ async function settlePaymentRequest({ paymentRequest, fallbackAmount }) {
   }
 
   const decoded = await decodeInvoice(paymentRequest, fallbackAmount);
-  const payment = await payInvoice(paymentRequest);
   const amount = Number(decoded.amount || getLocalInvoiceAmount(paymentRequest) || fallbackAmount || 0);
+  const maxAmount = getMaxPaymentSats();
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > maxAmount) {
+    throw new AppError(422, "AMOUNT_LIMIT_EXCEEDED", `Invoice amount must be between 1 and ${maxAmount} sats`);
+  }
+
+  const payment = await payInvoice(paymentRequest);
   const amountLabel = `${amount} sats`;
   const destination = decoded.destination || decoded.memo || "invoice destination";
-  const confirmationMessage = `${amountLabel} sent successfully`;
+  const confirmationMessage = payment.success
+    ? `${amountLabel} sent successfully`
+    : "The Lightning payment was not settled";
 
   return {
     status: payment.status === "settled" ? "ok" : "error",
@@ -390,5 +434,6 @@ module.exports = {
   getLocalInvoiceAmount,
   buildLocalInvoice,
   isRealMode,
-  getMode
+  getMode,
+  assertConfiguration
 };
