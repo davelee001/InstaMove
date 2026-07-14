@@ -1,4 +1,5 @@
 const { readJson, writeJson } = require("./storage");
+const { AppError } = require("./errors");
 const networkConfig = require("../config/network.json");
 
 const NODES_FILE = "data/nodes.json";
@@ -38,12 +39,12 @@ async function registerNode(payload) {
   const node = normalizeNodePayload(payload);
 
   if (!node.id) {
-    throw new Error("Node id is required");
+    throw new AppError(422, "VALIDATION_ERROR", "Node id is required");
   }
 
   const nodes = await listNodes();
   if (nodes.some((existing) => existing.id === node.id)) {
-    throw new Error("Node already exists");
+    throw new AppError(409, "NODE_EXISTS", "Node already exists");
   }
 
   const nextNodes = [...nodes, node];
@@ -54,14 +55,14 @@ async function registerNode(payload) {
 
 async function activateNode(nodeId) {
   if (!nodeId) {
-    throw new Error("Node id is required");
+    throw new AppError(422, "VALIDATION_ERROR", "Node id is required");
   }
 
   const nodes = await listNodes();
   const hasNode = nodes.some((node) => node.id === nodeId);
 
   if (!hasNode) {
-    throw new Error("Node not found");
+    throw new AppError(404, "NODE_NOT_FOUND", "Node not found");
   }
 
   const nextNodes = nodes.map((node) => ({
