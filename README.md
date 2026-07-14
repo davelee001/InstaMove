@@ -40,11 +40,32 @@ npm install
 npm start
 ```
 
-The server runs on port 3000.
+The server runs on port 4000.
+
+Before using protected endpoints, configure separate bearer tokens for payment and administrative access:
+
+```bash
+INSTAMOVE_PAYMENT_TOKEN=replace-with-a-long-random-payment-token
+INSTAMOVE_ADMIN_TOKEN=replace-with-a-long-random-admin-token
+```
+
+The payment token can call `POST /request`. The admin token can call payment endpoints and protected node or Bluetooth endpoints. A payment token cannot activate nodes or operate Bluetooth endpoints.
+
+Payment and invoice-creation requests require an `Idempotency-Key` header containing 8 to 128 safe characters. Reusing the same key and body returns the original response; reusing a key with a different body returns HTTP 409.
+
+Request bodies use strict schemas. Unknown fields, malformed invoices, invalid encrypted payloads, and amounts outside `1..MAX_PAYMENT_SATS` are rejected before payment.
 
 ## Request
 
-Send a POST request to `/request` with a JSON body containing `paymentRequest`.
+Send an authenticated POST request to `/request` with a JSON body containing `paymentRequest`.
+
+```bash
+curl -X POST http://localhost:4000/request \
+  -H "Authorization: Bearer $INSTAMOVE_PAYMENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: payment-2026-0001" \
+  -d '{"paymentRequest":"lnbcrt5000u1instamoved8353f1c82f4a3bb"}'
+```
 
 Example:
 
