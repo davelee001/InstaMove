@@ -105,7 +105,7 @@ Real BLE support must not be enabled for value-bearing flows until the following
 
 - Noise XX integration using a maintained library.
 - Hardware tests on every supported operating system.
-- Durable replay and deferred-payment storage.
+- Durable replay storage is implemented; deferred-payment storage remains gated on the authenticated BLE protocol.
 - LND status reconciliation after process restart.
 - Protocol conformance fixtures for every message type.
 - An independent security review of pairing and key management.
