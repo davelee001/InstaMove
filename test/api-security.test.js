@@ -65,6 +65,20 @@ after(async () => {
   if (dataDirectory) await fs.rm(dataDirectory, { recursive: true, force: true });
 });
 
+test("landing page renders operational widgets and its hero image", async () => {
+  const page = await fetch(`${baseUrl}/`);
+  const html = await page.text();
+  const hero = await fetch(`${baseUrl}/assets/instamove-hero.png`);
+
+  assert.equal(page.status, 200);
+  assert.equal(html.includes("Payment workspace"), true);
+  assert.equal(html.includes("Security posture"), true);
+  assert.equal(html.includes("Quick mock invoices"), true);
+  assert.equal(hero.status, 200);
+  assert.equal(hero.headers.get("content-type"), "image/png");
+  assert.equal(Number(hero.headers.get("content-length")) > 100000, true);
+});
+
 test("payment endpoint requires authentication", async () => {
   const response = await request("/request", {
     method: "POST",
