@@ -65,6 +65,7 @@ after(async () => {
     server.closeAllConnections?.();
     await new Promise((resolve) => server.close(resolve));
   }
+  require("../src/database").closeDatabases();
   if (dataDirectory) await fs.rm(dataDirectory, { recursive: true, force: true });
 });
 
@@ -234,8 +235,9 @@ test("invoice creation does not open or settle a channel", async () => {
     key: "invoice-create-1",
     body: { domain: "merchant.test", amount: 50 }
   });
-  const channels = JSON.parse(await fs.readFile(path.join(dataDirectory, "channels.json"), "utf8"));
-  const invoices = JSON.parse(await fs.readFile(path.join(dataDirectory, "invoices.json"), "utf8"));
+  const { readJson } = require("../src/storage");
+  const channels = await readJson("data/channels.json", []);
+  const invoices = await readJson("data/invoices.json", []);
 
   assert.equal(response.status, 200);
   assert.equal(response.body.channelCreated, false);
@@ -267,7 +269,8 @@ test("Bluetooth endpoints require an admin token", async () => {
 });
 
 test("unexpected internal errors return a sanitized response", async () => {
-  await fs.writeFile(path.join(dataDirectory, "invoices.json"), "not-json");
+  const database = require("../src/database").getDatabase();
+  database.exec("DROP TABLE documents");
   const response = await request("/request", {
     method: "POST",
     token: PAYMENT_TOKEN,
