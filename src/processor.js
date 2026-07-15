@@ -4,7 +4,7 @@ const lightning = require("./lightning");
 const notifier = require("./notifier");
 const nodeService = require("./node");
 const { AppError } = require("./errors");
-const { readJson, writeJson } = require("./storage");
+const { readJson, updateCollections } = require("./storage");
 const invoiceConfig = require("../config/invoice.json");
 
 function resolvePayloadSource(data, storedRequest) {
@@ -71,7 +71,7 @@ async function handlePayment(data, storedRequest, invoices) {
   };
 }
 
-async function handleInvoiceCreation(data, storedRequest, requests) {
+async function handleInvoiceCreation(data, storedRequest) {
   const payload = resolvePayloadSource(data, storedRequest);
   let decrypted;
 
@@ -112,22 +112,22 @@ async function handleInvoiceCreation(data, storedRequest, requests) {
     createdAt: new Date().toISOString()
   };
 
-  const invoices = await readJson("data/invoices.json", []);
-  await writeJson("data/invoices.json", [...invoices, invoiceRecord]);
-
-  if (storedRequest) {
-    const updatedRequests = requests.map((request) =>
-      request.id === storedRequest.id
-        ? {
-            ...request,
-            status: "invoice-created",
-            settled: false,
-            invoiceId: invoiceRecord.id
-          }
-        : request
-    );
-    await writeJson("data/requests.json", updatedRequests);
-  }
+  const paths = storedRequest
+    ? ["data/invoices.json", "data/requests.json"]
+    : ["data/invoices.json"];
+  await updateCollections(paths, (collections) => {
+    const next = {
+      "data/invoices.json": [...collections["data/invoices.json"], invoiceRecord]
+    };
+    if (storedRequest) {
+      next["data/requests.json"] = collections["data/requests.json"].map((request) =>
+        request.id === storedRequest.id
+          ? { ...request, status: "invoice-created", settled: false, invoiceId: invoiceRecord.id }
+          : request
+      );
+    }
+    return next;
+  });
 
   const notification = notifier.send("Invoice created");
   return {
@@ -165,7 +165,7 @@ async function handleRequest(data) {
     return handlePayment(data, storedRequest, invoices);
   }
 
-  return handleInvoiceCreation(data, storedRequest, requests);
+  return handleInvoiceCreation(data, storedRequest);
 }
 
 module.exports = { handleRequest };
