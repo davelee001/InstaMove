@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "InstaMove basic node-side implementation",
   "main": "src/app.js",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "start": "node src/app.js",
     "test": "node --test",
