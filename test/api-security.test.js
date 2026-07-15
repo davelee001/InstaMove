@@ -79,8 +79,8 @@ test("landing page renders operational widgets and its hero image", async () => 
   assert.equal(html.includes("Security posture"), true);
   assert.equal(html.includes("Quick mock invoices"), true);
   assert.equal(html.includes("Services operational"), true);
-  assert.equal(html.includes("color-scheme: dark"), true);
-  assert.equal(html.includes("--surface: #242923"), true);
+  assert.equal(html.includes("color-scheme: light"), true);
+  assert.equal(html.includes("--surface: #e5e8e1"), true);
   const policy = page.headers.get("content-security-policy");
   const nonce = policy.match(/script-src 'nonce-([^']+)'/)?.[1];
   assert.ok(nonce);
