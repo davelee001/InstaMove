@@ -1,67 +1,63 @@
 const crypto = require("crypto");
 const { AppError } = require("./errors");
-const { readJson, writeJson } = require("./storage");
+const { claimRecord, completeRecord, releaseRecord } = require("./idempotency-store");
 
-const IDEMPOTENCY_FILE = "data/idempotency.json";
-const RETENTION_MS = 24 * 60 * 60 * 1000;
 const inFlight = new Map();
-let persistenceQueue = Promise.resolve();
 
 function fingerprint(payload) {
   return crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
 }
 
-async function findRecord(key) {
-  const records = await readJson(IDEMPOTENCY_FILE, []);
-  return records.find((record) => record.key === key) || null;
-}
-
-async function persistRecord(record) {
-  const operation = persistenceQueue.then(async () => {
-    const now = Date.now();
-    const records = await readJson(IDEMPOTENCY_FILE, []);
-    const retained = records.filter(
-      (item) => item.key !== record.key && Date.parse(item.createdAt) >= now - RETENTION_MS
-    );
-    await writeJson(IDEMPOTENCY_FILE, [...retained, record]);
-  });
-  persistenceQueue = operation.catch(() => {});
-  return operation;
-}
-
 async function execute({ key, payload, operation }) {
   const requestFingerprint = fingerprint(payload);
-  const stored = await findRecord(key);
-
-  if (stored) {
-    if (stored.fingerprint !== requestFingerprint) {
-      throw new AppError(409, "IDEMPOTENCY_CONFLICT", "Idempotency-Key was already used with a different request");
-    }
-    return { replayed: true, result: stored.result };
-  }
-
   const active = inFlight.get(key);
   if (active) {
     if (active.fingerprint !== requestFingerprint) {
       throw new AppError(409, "IDEMPOTENCY_CONFLICT", "Idempotency-Key is being used with a different request");
     }
-    return { replayed: true, result: await active.promise };
+    return { replayed: true, result: (await active.promise).result };
   }
 
+  const ownerId = crypto.randomUUID();
   const promise = (async () => {
-    const result = await operation();
-    await persistRecord({
-      key,
-      fingerprint: requestFingerprint,
-      createdAt: new Date().toISOString(),
-      result
-    });
-    return result;
+    const claim = claimRecord({ key, fingerprint: requestFingerprint, ownerId });
+    if (claim.status === "conflict") {
+      throw new AppError(409, "IDEMPOTENCY_CONFLICT", "Idempotency-Key was already used with a different request");
+    }
+    if (claim.status === "pending") {
+      throw new AppError(
+        409,
+        "IDEMPOTENCY_RECONCILIATION_REQUIRED",
+        "The original request is incomplete and must be reconciled before retrying"
+      );
+    }
+    if (claim.status === "completed") {
+      return { replayed: true, result: claim.result };
+    }
+
+    let result;
+    try {
+      result = await operation();
+    } catch (error) {
+      releaseRecord({ key, fingerprint: requestFingerprint, ownerId });
+      throw error;
+    }
+
+    try {
+      completeRecord({ key, fingerprint: requestFingerprint, ownerId, result });
+    } catch {
+      throw new AppError(
+        503,
+        "PERSISTENCE_CONFIRMATION_FAILED",
+        "The operation completed but its durable result could not be confirmed"
+      );
+    }
+    return { replayed: false, result };
   })();
 
   inFlight.set(key, { fingerprint: requestFingerprint, promise });
   try {
-    return { replayed: false, result: await promise };
+    return await promise;
   } finally {
     inFlight.delete(key);
   }
