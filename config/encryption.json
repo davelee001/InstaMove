@@ -1,5 +1,7 @@
 {
-  "algorithm": "aes-256-cbc",
-  "secretKey": "your-secret-key",
-  "ivLength": 16
+  "algorithm": "aes-256-gcm",
+  "keyEnvironmentVariable": "INSTAMOVE_ENCRYPTION_KEY",
+  "ivLength": 12,
+  "tagLength": 16,
+  "envelopeVersion": "v1"
 }
