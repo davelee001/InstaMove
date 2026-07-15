@@ -31,7 +31,9 @@ test("encryption uses a fresh nonce for each envelope", () => {
 test("tampered ciphertext is rejected", () => {
   process.env.INSTAMOVE_ENCRYPTION_KEY = crypto.randomBytes(32).toString("hex");
   const parts = encryption.encrypt({ domain: "merchant.test" }).split(".");
-  parts[3] = `${parts[3].slice(0, -1)}${parts[3].endsWith("A") ? "B" : "A"}`;
+  const ciphertext = Buffer.from(parts[3], "base64url");
+  ciphertext[0] ^= 1;
+  parts[3] = ciphertext.toString("base64url");
 
   assert.throws(
     () => encryption.decrypt(parts.join(".")),
