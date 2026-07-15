@@ -4,6 +4,17 @@ InstaMove is a Node.js backend and landing page for testing Lightning-style invo
 
 It accepts a request, processes the payload, and returns a JSON response. In local mode, the app recognizes built-in invoice IDs that map to fixed amounts.
 
+## Web Workspace
+
+Open `http://localhost:4000` after starting the server. The responsive operations workspace provides:
+
+- live Lightning mode, active-node, Bluetooth, inventory, and session widgets
+- quick mock-invoice selection and authenticated invoice submission
+- formatted settlement responses and session activity
+- visible security and service-readiness status
+
+The interface uses a muted gray-green palette with dark operational areas for the hero and response console. Payment access tokens entered in the workspace remain in the current browser tab and are not persisted by the page.
+
 By default it runs in mock mode. Mock mode never contacts LND or moves real funds.
 
 To connect it to a Lightning node, explicitly set all variables required by the selected mode:
@@ -23,6 +34,8 @@ Optional:
 - `LND_REQUEST_TIMEOUT_MS=5000`
 - `LND_MAX_RESPONSE_BYTES=1048576`
 - `LND_GET_RETRY_ATTEMPTS=3`
+- `INSTAMOVE_DB_PATH=./data/instamove.sqlite`
+- `IDEMPOTENCY_RETENTION_MS=86400000`
 
 Regtest keeps the payment flow off real money while still using real Lightning APIs when your regtest LND nodes are connected.
 
@@ -53,7 +66,7 @@ npm start
 
 The server runs on port 4000.
 
-Use Node.js 22 or newer. Run the same validation used in CI with:
+Run the same validation used in CI with:
 
 ```bash
 npm run check
@@ -76,6 +89,13 @@ Payment and invoice-creation requests require an `Idempotency-Key` header contai
 Request bodies use strict schemas. Unknown fields, malformed invoices, invalid encrypted payloads, and amounts outside `1..MAX_PAYMENT_SATS` are rejected before payment.
 
 Encrypted request payloads use versioned AES-256-GCM envelopes. `INSTAMOVE_ENCRYPTION_KEY` must decode to exactly 32 bytes and is never stored in the repository. Generate a key with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+
+## Service Probes
+
+- `GET /health` reports process liveness.
+- `GET /ready` verifies Lightning configuration, SQLite access, authentication roles, and Bluetooth initialization.
+
+Readiness returns HTTP 503 until every required runtime dependency is correctly configured. Neither probe exposes credentials, invoice data, or upstream LND error bodies.
 
 ## Request
 
