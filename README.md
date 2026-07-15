@@ -28,6 +28,10 @@ Regtest keeps the payment flow off real money while still using real Lightning A
 
 LND requests use bounded timeouts and response sizes. Only idempotent GET requests are retried; invoice creation, channel operations, and payments are never automatically replayed by the transport client.
 
+Runtime state is stored transactionally in SQLite. On first startup, existing node, request, channel, invoice, and idempotency JSON files are imported once. After import, SQLite is authoritative and later edits to those JSON files are ignored. Set `INSTAMOVE_DB_PATH` to place the database outside the repository.
+
+Idempotency reservations are written before payment processing and completed only after the result is durable. A request left pending by a process crash returns `IDEMPOTENCY_RECONCILIATION_REQUIRED`; it is not automatically replayed because the external payment outcome may be unknown.
+
 ## Local Invoices
 
 The current built-in local invoice IDs are:
@@ -39,6 +43,8 @@ The current built-in local invoice IDs are:
 These are local identifiers used by InstaMove to simulate invoice handling.
 
 ## Run
+
+InstaMove requires Node.js 22.13 or newer. Use the major version recorded in `.nvmrc`.
 
 ```bash
 npm install
