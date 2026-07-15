@@ -11,6 +11,7 @@ const idempotency = require("./idempotency");
 const { getLiveness, getReadiness } = require("./health");
 const { renderLandingPage } = require("./landing");
 const logger = require("./logger");
+const { closeDatabases } = require("./database");
 const { createAdminRateLimiter, createPaymentRateLimiter } = require("./rate-limit");
 const { applySecurityHeaders } = require("./security-headers");
 const {
@@ -214,7 +215,17 @@ function startServer(port = process.env.PORT || 4000) {
 }
 
 if (require.main === module) {
-  startServer();
+  const server = startServer();
+  const shutdown = (signal) => {
+    logger.info("server_shutdown_started", { signal });
+    server.close(() => {
+      closeDatabases();
+      logger.info("server_shutdown_completed", { signal });
+    });
+    setTimeout(() => server.closeAllConnections?.(), 5000).unref();
+  };
+  process.once("SIGINT", () => shutdown("SIGINT"));
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
 }
 
 module.exports = { app, startServer };
