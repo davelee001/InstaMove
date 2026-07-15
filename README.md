@@ -20,8 +20,13 @@ Optional:
 - `LND_CHANNEL_FUNDING_SATS`
 - `LIGHTNING_AUTO_SETTLE=false`
 - `MAX_PAYMENT_SATS=1000000`
+- `LND_REQUEST_TIMEOUT_MS=5000`
+- `LND_MAX_RESPONSE_BYTES=1048576`
+- `LND_GET_RETRY_ATTEMPTS=3`
 
 Regtest keeps the payment flow off real money while still using real Lightning APIs when your regtest LND nodes are connected.
+
+LND requests use bounded timeouts and response sizes. Only idempotent GET requests are retried; invoice creation, channel operations, and payments are never automatically replayed by the transport client.
 
 ## Local Invoices
 
@@ -42,18 +47,29 @@ npm start
 
 The server runs on port 4000.
 
+Use Node.js 22 or newer. Run the same validation used in CI with:
+
+```bash
+npm run check
+```
+
 Before using protected endpoints, configure separate bearer tokens for payment and administrative access:
 
 ```bash
 INSTAMOVE_PAYMENT_TOKEN=replace-with-a-long-random-payment-token
 INSTAMOVE_ADMIN_TOKEN=replace-with-a-long-random-admin-token
+INSTAMOVE_ENCRYPTION_KEY=replace-with-64-hex-characters
 ```
 
 The payment token can call `POST /request`. The admin token can call payment endpoints and protected node or Bluetooth endpoints. A payment token cannot activate nodes or operate Bluetooth endpoints.
 
+Both tokens must be at least 24 characters, must not use the example placeholder values, and must be different from each other. Readiness fails closed when these requirements are not met.
+
 Payment and invoice-creation requests require an `Idempotency-Key` header containing 8 to 128 safe characters. Reusing the same key and body returns the original response; reusing a key with a different body returns HTTP 409.
 
 Request bodies use strict schemas. Unknown fields, malformed invoices, invalid encrypted payloads, and amounts outside `1..MAX_PAYMENT_SATS` are rejected before payment.
+
+Encrypted request payloads use versioned AES-256-GCM envelopes. `INSTAMOVE_ENCRYPTION_KEY` must decode to exactly 32 bytes and is never stored in the repository. Generate a key with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
 ## Request
 
@@ -76,3 +92,9 @@ Example:
 ```
 
 Creating an invoice no longer opens a Lightning channel or pays that invoice from the same node. Created invoices remain pending until an external payer settles them. Channel management must be performed separately from the request flow.
+
+## Design And Operations
+
+- [Offline payment protocol](docs/OFFLINE_PAYMENT_PROTOCOL.md)
+- [Threat model](docs/THREAT_MODEL.md)
+- [Operations guide](docs/OPERATIONS.md)
