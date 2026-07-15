@@ -5,7 +5,10 @@
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
-    "test": "node --test"
+    "test": "node --test",
+    "check:syntax": "node scripts/check-syntax.js",
+    "check": "npm run check:syntax && npm test",
+    "audit:high": "npm audit --audit-level=high"
   },
   "dependencies": {
     "express": "^4.18.2"
