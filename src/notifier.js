@@ -1,5 +1,7 @@
+const logger = require("./logger");
+
 function send(message) {
-  console.log("NOTIFY:", message);
+  logger.info("notification_sent", { message });
   return {
     success: true,
     message
