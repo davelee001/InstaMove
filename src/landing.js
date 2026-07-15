@@ -24,7 +24,7 @@ function icon(name, size = 18) {
   return `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.activity}</svg>`;
 }
 
-function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMode }) {
+function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMode, nonce, serviceReady }) {
   const mode = String(lightningMode || "mock").toLowerCase();
   const modeLabel = mode === "regtest" ? "Regtest" : mode === "lnd" ? "LND" : "Mock";
   const nodeId = activeNode?.id || "No active node";
@@ -40,7 +40,7 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#151814" />
     <title>InstaMove | Lightning Operations</title>
-    <style>
+    <style nonce="${escapeHtml(nonce)}">
       :root {
         color-scheme: light;
         --ink: #171915;
@@ -98,6 +98,7 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
       .brand-sub { color: #9fa69b; font-size: 0.69rem; font-weight: 500; }
       .top-status { display: flex; align-items: center; gap: 10px; color: #dfe4db; font-size: 0.78rem; }
       .pulse { width: 8px; height: 8px; border-radius: 50%; background: #42c59b; box-shadow: 0 0 0 4px rgba(66,197,155,0.14); }
+      .pulse.warn { background: var(--amber); box-shadow: 0 0 0 4px rgba(233,166,41,0.16); }
 
       .hero {
         min-height: 306px;
@@ -264,7 +265,7 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
           <div class="brand-mark">${icon("bolt", 19)}</div>
           <div class="brand-copy"><span class="brand-name">InstaMove</span><span class="brand-sub">Lightning operations console</span></div>
         </div>
-        <div class="top-status"><span class="pulse"></span><span>Services operational</span></div>
+        <div class="top-status"><span class="pulse${serviceReady ? "" : " warn"}"></span><span>${serviceReady ? "Services operational" : "Configuration required"}</span></div>
       </div>
     </header>
 
@@ -359,7 +360,7 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
     <footer class="footer"><div class="footer-inner"><span>InstaMove Lightning operations</span><span>Node-side prototype · ${escapeHtml(modeLabel)} mode</span></div></footer>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script>
+    <script nonce="${escapeHtml(nonce)}">
       const form = document.getElementById("payment-form");
       const invoiceInput = document.getElementById("paymentRequest");
       const tokenInput = document.getElementById("accessToken");

@@ -8,8 +8,11 @@ const { initBluetooth, getBluetooth } = require("./bluetooth");
 const { authorize } = require("./auth");
 const { AppError, normalizeError, toErrorResponse } = require("./errors");
 const idempotency = require("./idempotency");
+const { getLiveness, getReadiness } = require("./health");
 const { renderLandingPage } = require("./landing");
+const logger = require("./logger");
 const { createAdminRateLimiter, createPaymentRateLimiter } = require("./rate-limit");
+const { applySecurityHeaders } = require("./security-headers");
 const {
   validateBluetoothBody,
   validateIdempotencyKey,
@@ -27,9 +30,23 @@ app.use((req, res, next) => {
   req.requestId = /^[A-Za-z0-9._:-]{1,128}$/.test(suppliedRequestId || "")
     ? suppliedRequestId
     : crypto.randomUUID();
+  req.cspNonce = crypto.randomBytes(16).toString("base64");
   res.set("X-Request-Id", req.requestId);
+  const startedAt = process.hrtime.bigint();
+  res.on("finish", () => {
+    const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+    logger.info("http_request_completed", {
+      requestId: req.requestId,
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      durationMs: Number(durationMs.toFixed(2)),
+      authRole: req.auth?.role || "anonymous"
+    });
+  });
   next();
 });
+app.use(applySecurityHeaders);
 app.use("/assets", express.static(path.resolve(__dirname, "../public"), {
   fallthrough: false,
   immutable: true,
@@ -47,14 +64,23 @@ function asyncHandler(handler) {
 function safeOperationError(error, requestId) {
   const normalized = normalizeError(error);
   if (normalized.statusCode === 500) {
-    console.error(`[${requestId}] internal request failure (${error?.name || "Error"})`);
+    logger.error("internal_request_failure", {
+      requestId,
+      errorName: error?.name || "Error",
+      errorCode: error?.code || "INTERNAL_ERROR"
+    });
   }
   return toErrorResponse(normalized, requestId);
 }
 
-function logJsonResponse(source, payload) {
-  console.log(`[${source}] response:`);
-  console.log(JSON.stringify(payload, null, 2));
+function logOperation(source, payload) {
+  logger.info("operation_completed", {
+    source,
+    status: payload.status,
+    code: payload.code,
+    amount: payload.amount,
+    lightningMode: payload.lightningMode
+  });
 }
 
 const bluetooth = initBluetooth({ name: "InstaMove" });
@@ -77,7 +103,7 @@ bluetooth.on("request", async (payload) => {
         }
       }
     });
-    logJsonResponse("bluetooth", execution.result.body);
+    logOperation("bluetooth", execution.result.body);
     bluetooth.sendResponse(execution.result.body);
   } catch (error) {
     bluetooth.sendResponse(toErrorResponse(error, requestId).body);
@@ -85,9 +111,10 @@ bluetooth.on("request", async (payload) => {
 });
 
 app.get("/", asyncHandler(async (req, res) => {
-  const [nodes, bluetoothStatus] = await Promise.all([
+  const [nodes, bluetoothStatus, readiness] = await Promise.all([
     nodeService.listNodes(),
-    Promise.resolve(getBluetooth()?.getStatus() || null)
+    Promise.resolve(getBluetooth()?.getStatus() || null),
+    getReadiness()
   ]);
   const activeNode = nodes.find((node) => node.status === "active") || nodes[0] || null;
 
@@ -95,8 +122,19 @@ app.get("/", asyncHandler(async (req, res) => {
     activeNode,
     nodeCount: nodes.length,
     bluetoothStatus,
-    lightningMode: lightning.getMode()
+    lightningMode: lightning.getMode(),
+    nonce: req.cspNonce,
+    serviceReady: readiness.status === "ready"
   }));
+}));
+
+app.get("/health", (req, res) => {
+  res.set("Cache-Control", "no-store").json(getLiveness());
+});
+
+app.get("/ready", asyncHandler(async (req, res) => {
+  const readiness = await getReadiness();
+  res.set("Cache-Control", "no-store").status(readiness.status === "ready" ? 200 : 503).json(readiness);
 }));
 
 app.post(
@@ -119,7 +157,7 @@ app.post(
     });
 
     res.set("Idempotency-Replayed", String(execution.replayed));
-    logJsonResponse("http", execution.result.body);
+    logOperation("http", execution.result.body);
     res.status(execution.result.statusCode).json(execution.result.body);
   })
 );
@@ -172,7 +210,7 @@ app.use((error, req, res, next) => {
 });
 
 function startServer(port = process.env.PORT || 4000) {
-  return app.listen(port, () => console.log(`Server running on port ${port}`));
+  return app.listen(port, () => logger.info("server_started", { port, lightningMode: lightning.getMode() }));
 }
 
 if (require.main === module) {
