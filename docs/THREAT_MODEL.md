@@ -24,7 +24,7 @@ Applies to: HTTP API, BLE transport, local persistence, and LND integration
 
 1. Browser to InstaMove HTTP server.
 2. BLE peer to merchant peripheral.
-3. InstaMove process to local JSON or future database storage.
+3. InstaMove process to the local SQLite database and its filesystem boundary.
 4. InstaMove process to LND REST.
 5. Runtime environment to deployment secret store.
 
@@ -72,8 +72,8 @@ Applies to: HTTP API, BLE transport, local persistence, and LND integration
 
 ### Local File Compromise
 
-**Threat:** an attacker reads or modifies JSON persistence.  
-**Controls:** authenticated encryption for sensitive payloads, atomic writes, least-privilege filesystem permissions, and migration to transactional storage before production.
+**Threat:** an attacker reads, replaces, or rolls back persistent state.
+**Controls:** authenticated encryption for sensitive payloads, transactional SQLite writes, WAL durability, idempotency reservations, one-time legacy import, and least-privilege filesystem permissions. Database encryption at rest and rollback detection remain deployment responsibilities.
 
 ### Compromised BLE Peer
 
