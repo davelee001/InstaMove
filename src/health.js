@@ -3,6 +3,7 @@ const { getAuthConfiguration } = require("./auth");
 const lightning = require("./lightning");
 const nodeService = require("./node");
 const { getBluetooth } = require("./bluetooth");
+const { getDatabase } = require("./database");
 
 function getLiveness() {
   return {
@@ -32,6 +33,7 @@ async function getReadiness() {
   }
 
   try {
+    getDatabase().prepare("SELECT 1 AS healthy").get();
     await nodeService.listNodes();
     checks.storage = true;
   } catch {
