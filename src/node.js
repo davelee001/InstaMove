@@ -1,4 +1,4 @@
-const { readJson, writeJson } = require("./storage");
+const { readJson, updateJson } = require("./storage");
 const { AppError } = require("./errors");
 const networkConfig = require("../config/network.json");
 
@@ -42,13 +42,12 @@ async function registerNode(payload) {
     throw new AppError(422, "VALIDATION_ERROR", "Node id is required");
   }
 
-  const nodes = await listNodes();
-  if (nodes.some((existing) => existing.id === node.id)) {
-    throw new AppError(409, "NODE_EXISTS", "Node already exists");
-  }
-
-  const nextNodes = [...nodes, node];
-  await writeJson(NODES_FILE, nextNodes);
+  await updateJson(NODES_FILE, (nodes) => {
+    if (nodes.some((existing) => existing.id === node.id)) {
+      throw new AppError(409, "NODE_EXISTS", "Node already exists");
+    }
+    return [...nodes, node];
+  });
 
   return node;
 }
@@ -58,20 +57,18 @@ async function activateNode(nodeId) {
     throw new AppError(422, "VALIDATION_ERROR", "Node id is required");
   }
 
-  const nodes = await listNodes();
-  const hasNode = nodes.some((node) => node.id === nodeId);
-
-  if (!hasNode) {
-    throw new AppError(404, "NODE_NOT_FOUND", "Node not found");
-  }
-
-  const nextNodes = nodes.map((node) => ({
-    ...node,
-    status: node.id === nodeId ? "active" : "inactive"
-  }));
-
-  await writeJson(NODES_FILE, nextNodes);
-  return nextNodes.find((node) => node.id === nodeId) || null;
+  let activatedNode = null;
+  await updateJson(NODES_FILE, (nodes) => {
+    if (!nodes.some((node) => node.id === nodeId)) {
+      throw new AppError(404, "NODE_NOT_FOUND", "Node not found");
+    }
+    return nodes.map((node) => {
+      const updated = { ...node, status: node.id === nodeId ? "active" : "inactive" };
+      if (updated.id === nodeId) activatedNode = updated;
+      return updated;
+    });
+  });
+  return activatedNode;
 }
 
 module.exports = {
