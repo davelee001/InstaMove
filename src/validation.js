@@ -111,8 +111,8 @@ function validateRequestBody(body) {
   if (nodeId && !ID_PATTERN.test(nodeId)) {
     validationError("nodeId contains unsupported characters");
   }
-  if (payload && (!/^[0-9a-f]+$/i.test(payload) || payload.length % 2 !== 0)) {
-    validationError("payload must be an even-length hexadecimal string");
+  if (payload && !/^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(payload)) {
+    validationError("payload must be a versioned authenticated encryption envelope");
   }
   if (paymentRequest && (domain || address || payload)) {
     validationError("A payment request cannot be combined with invoice-creation fields");
