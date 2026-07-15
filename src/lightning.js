@@ -1,10 +1,7 @@
-const fs = require("fs");
 const crypto = require("crypto");
-const https = require("https");
-const http = require("http");
-const path = require("path");
 const lightningConfig = require("../config/lightning.json");
 const { AppError } = require("./errors");
+const { callLnd } = require("./lnd-client");
 const { getMaxPaymentSats, validateInvoice } = require("./validation");
 
 const SUPPORTED_MODES = new Set(["mock", "regtest", "lnd"]);
@@ -64,85 +61,6 @@ function isRealMode() {
 
 function getRuntimeMode() {
   return assertConfiguration();
-}
-
-function readMacaroonHeaderValue(source) {
-  if (!source) {
-    return null;
-  }
-
-  if (fs.existsSync(source)) {
-    return fs.readFileSync(source).toString("hex");
-  }
-
-  return source.replace(/^0x/i, "");
-}
-
-function requestJson(urlString, { method = "GET", headers = {}, body } = {}) {
-  return new Promise((resolve, reject) => {
-    const url = new URL(urlString);
-    const transport = url.protocol === "http:" ? http : https;
-    const request = transport.request(
-      {
-        method,
-        hostname: url.hostname,
-        port: url.port || (url.protocol === "http:" ? 80 : 443),
-        path: `${url.pathname}${url.search}`,
-        headers,
-        rejectUnauthorized: process.env.LND_ALLOW_INSECURE !== "true"
-      },
-      (response) => {
-        let responseBody = "";
-
-        response.setEncoding("utf8");
-        response.on("data", (chunk) => {
-          responseBody += chunk;
-        });
-        response.on("end", () => {
-          if (response.statusCode >= 400) {
-            return reject(new Error(`Lightning API error ${response.statusCode}: ${responseBody}`));
-          }
-
-          if (!responseBody) {
-            return resolve({});
-          }
-
-          try {
-            return resolve(JSON.parse(responseBody));
-          } catch (error) {
-            return reject(error);
-          }
-        });
-      }
-    );
-
-    request.on("error", reject);
-
-    if (body) {
-      request.write(JSON.stringify(body));
-    }
-
-    request.end();
-  });
-}
-
-async function callLnd(pathname, options = {}) {
-  const baseUrl = process.env.LND_REST_URL;
-  const macaroon = readMacaroonHeaderValue(process.env.LND_MACAROON);
-
-  if (!baseUrl || !macaroon) {
-    throw new Error("LND_REST_URL and LND_MACAROON are required for lnd/regtest mode");
-  }
-
-  return requestJson(`${baseUrl.replace(/\/$/, "")}${pathname}`, {
-    method: options.method || "GET",
-    headers: {
-      "Grpc-Metadata-macaroon": macaroon,
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    },
-    body: options.body
-  });
 }
 
 async function createInvoice({ requestId, amount, memo, expirySeconds }) {
