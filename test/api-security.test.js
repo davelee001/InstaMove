@@ -61,7 +61,10 @@ before(async () => {
 });
 
 after(async () => {
-  if (server) await new Promise((resolve) => server.close(resolve));
+  if (server) {
+    server.closeAllConnections?.();
+    await new Promise((resolve) => server.close(resolve));
+  }
   if (dataDirectory) await fs.rm(dataDirectory, { recursive: true, force: true });
 });
 
@@ -74,9 +77,46 @@ test("landing page renders operational widgets and its hero image", async () => 
   assert.equal(html.includes("Payment workspace"), true);
   assert.equal(html.includes("Security posture"), true);
   assert.equal(html.includes("Quick mock invoices"), true);
+  assert.equal(html.includes("Services operational"), true);
+  const policy = page.headers.get("content-security-policy");
+  const nonce = policy.match(/script-src 'nonce-([^']+)'/)?.[1];
+  assert.ok(nonce);
+  assert.equal(html.includes(`<script nonce="${nonce}">`), true);
+  assert.equal(html.includes(`<style nonce="${nonce}">`), true);
+  assert.equal(page.headers.get("x-frame-options"), "DENY");
+  assert.equal(page.headers.get("x-content-type-options"), "nosniff");
   assert.equal(hero.status, 200);
   assert.equal(hero.headers.get("content-type"), "image/png");
   assert.equal(Number(hero.headers.get("content-length")) > 100000, true);
+});
+
+test("liveness and readiness endpoints report operational state", async () => {
+  const health = await request("/health");
+  const ready = await request("/ready");
+
+  assert.equal(health.status, 200);
+  assert.equal(health.body.status, "ok");
+  assert.equal(health.headers.get("cache-control"), "no-store");
+  assert.equal(ready.status, 200);
+  assert.equal(ready.body.status, "ready");
+  assert.equal(ready.body.checks.paymentAuthentication, true);
+  assert.equal(ready.body.checks.adminAuthentication, true);
+});
+
+test("readiness fails when administrative authentication is missing", async () => {
+  const adminToken = process.env.INSTAMOVE_ADMIN_TOKEN;
+  delete process.env.INSTAMOVE_ADMIN_TOKEN;
+  try {
+    const response = await request("/ready");
+    const page = await fetch(`${baseUrl}/`);
+    const html = await page.text();
+    assert.equal(response.status, 503);
+    assert.equal(response.body.status, "not_ready");
+    assert.equal(response.body.checks.adminAuthentication, false);
+    assert.equal(html.includes("Configuration required"), true);
+  } finally {
+    process.env.INSTAMOVE_ADMIN_TOKEN = adminToken;
+  }
 });
 
 test("payment endpoint requires authentication", async () => {
@@ -129,6 +169,23 @@ test("malformed JSON errors are sanitized and retain a request id", async () => 
   assert.equal(response.headers.get("x-request-id"), "json-test-request");
   assert.equal(body.code, "INVALID_JSON");
   assert.equal(body.requestId, "json-test-request");
+});
+
+test("encrypted request processing fails closed without a configured key", async () => {
+  const encryption = require("../src/encryption");
+  process.env.INSTAMOVE_ENCRYPTION_KEY = "11".repeat(32);
+  const payload = encryption.encrypt({ domain: "merchant.test" });
+  delete process.env.INSTAMOVE_ENCRYPTION_KEY;
+
+  const response = await request("/request", {
+    method: "POST",
+    token: PAYMENT_TOKEN,
+    key: "encryption-config-1",
+    body: { payload }
+  });
+
+  assert.equal(response.status, 503);
+  assert.equal(response.body.code, "ENCRYPTION_NOT_CONFIGURED");
 });
 
 test("decoded invoice amounts above the configured limit are rejected", async () => {
