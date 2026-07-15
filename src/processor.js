@@ -83,6 +83,7 @@ async function handleInvoiceCreation(data, storedRequest, requests) {
           address: data.address || storedRequest?.address || null
         };
   } catch (error) {
+    if (error instanceof AppError && error.statusCode === 503) throw error;
     throw new AppError(422, "INVALID_ENCRYPTED_PAYLOAD", "The encrypted request payload is invalid");
   }
 
