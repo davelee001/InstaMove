@@ -38,26 +38,26 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#151814" />
+    <meta name="theme-color" content="#121512" />
     <title>InstaMove | Lightning Operations</title>
     <style nonce="${escapeHtml(nonce)}">
       :root {
-        color-scheme: light;
-        --ink: #171915;
-        --ink-soft: #363a33;
-        --muted: #71766c;
-        --line: #d9dcd3;
-        --surface: #ffffff;
-        --canvas: #f2f3ee;
-        --canvas-deep: #e8ebe3;
+        color-scheme: dark;
+        --ink: #edf0e8;
+        --ink-soft: #c9cec3;
+        --muted: #969d91;
+        --line: #394038;
+        --surface: #242923;
+        --canvas: #191d19;
+        --canvas-deep: #1e231e;
         --amber: #e9a629;
-        --amber-dark: #9f6500;
-        --teal: #137a72;
-        --teal-soft: #e0f1ee;
-        --danger: #b43b35;
-        --danger-soft: #f8e6e4;
+        --amber-dark: #f0bd5b;
+        --teal: #55b8ad;
+        --teal-soft: #203a35;
+        --danger: #e06d66;
+        --danger-soft: #3a2423;
         --radius: 6px;
-        --shadow: 0 10px 30px rgba(27, 31, 24, 0.08);
+        --shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
       }
       * { box-sizing: border-box; }
       html { scroll-behavior: smooth; }
@@ -75,7 +75,7 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
       .icon { flex: 0 0 auto; }
       .topbar {
         height: 64px;
-        background: #151814;
+        background: #121512;
         color: #fff;
         border-bottom: 1px solid rgba(255,255,255,0.1);
       }
@@ -138,10 +138,10 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
         background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
         display: grid; grid-template-columns: 38px minmax(0,1fr); gap: 12px; align-items: center;
       }
-      .metric-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 6px; background: #f7ead1; color: var(--amber-dark); }
+      .metric-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 6px; background: #3b3120; color: var(--amber-dark); }
       .metric:nth-child(2) .metric-icon { background: var(--teal-soft); color: var(--teal); }
-      .metric:nth-child(3) .metric-icon { background: #e7ece5; color: #4c5849; }
-      .metric:nth-child(4) .metric-icon { background: #eee8f5; color: #665079; }
+      .metric:nth-child(3) .metric-icon { background: #303830; color: #aebaaa; }
+      .metric:nth-child(4) .metric-icon { background: #37303f; color: #c2a8d5; }
       .metric-label { display: block; color: var(--muted); font-size: 0.71rem; font-weight: 700; text-transform: uppercase; }
       .metric-value { margin-top: 4px; font-size: 1rem; font-weight: 780; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .metric-meta { margin-top: 3px; color: var(--muted); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -156,38 +156,38 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
       .payment-panel { padding: 22px; }
       .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
       .panel-title h3 { margin: 0; font-size: 1rem; }
-      .mode-tag { padding: 5px 8px; border-radius: 4px; background: #f7ead1; color: var(--amber-dark); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; }
+      .mode-tag { padding: 5px 8px; border-radius: 4px; background: #3b3120; color: var(--amber-dark); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; }
       .quick-label { margin-bottom: 8px; color: var(--muted); font-size: 0.72rem; font-weight: 700; }
       .quick-invoices { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
-      .quick-invoice { min-height: 42px; border: 0; border-right: 1px solid var(--line); background: #fafbf8; color: var(--ink-soft); cursor: pointer; font-size: 0.76rem; font-weight: 700; }
+      .quick-invoice { min-height: 42px; border: 0; border-right: 1px solid var(--line); background: #20251f; color: var(--ink-soft); cursor: pointer; font-size: 0.76rem; font-weight: 700; }
       .quick-invoice:last-child { border-right: 0; }
-      .quick-invoice:hover, .quick-invoice:focus-visible { background: #f5ead3; color: var(--amber-dark); outline: none; }
+      .quick-invoice:hover, .quick-invoice:focus-visible { background: #37301f; color: var(--amber-dark); outline: none; }
       .field { display: grid; gap: 7px; margin-bottom: 14px; }
       .field-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       label { color: var(--ink-soft); font-size: 0.76rem; font-weight: 760; }
       .input-wrap { position: relative; }
       input {
-        width: 100%; height: 48px; border: 1px solid #cfd3c9; border-radius: 6px;
-        background: #fbfcf9; color: var(--ink); padding: 0 46px 0 13px; outline: none;
+        width: 100%; height: 48px; border: 1px solid #454c43; border-radius: 6px;
+        background: #1c201c; color: var(--ink); padding: 0 46px 0 13px; outline: none;
       }
       input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(19,122,114,0.12); }
       .icon-button { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; }
-      .icon-button:hover, .icon-button:focus-visible { color: var(--ink); background: #eef0ea; outline: none; }
+      .icon-button:hover, .icon-button:focus-visible { color: var(--ink); background: #30362f; outline: none; }
       .input-action { position: absolute; right: 6px; top: 6px; }
       .field-help { color: var(--muted); font-size: 0.7rem; }
       .submit-row { display: flex; align-items: center; gap: 14px; margin-top: 20px; }
       .primary-button {
         min-width: 154px; height: 46px; border: 0; border-radius: 6px; padding: 0 18px;
         display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-        background: var(--ink); color: #fff; font-weight: 760; cursor: pointer;
+        background: var(--amber); color: #171a16; font-weight: 780; cursor: pointer;
       }
-      .primary-button:hover { background: #2b3029; }
+      .primary-button:hover { background: #f0b544; }
       .primary-button:disabled { opacity: 0.52; cursor: not-allowed; }
       .form-status { min-height: 20px; color: var(--muted); font-size: 0.76rem; }
       .form-status.success { color: var(--teal); }
       .form-status.error { color: var(--danger); }
       .stages { margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-      .stage { height: 4px; background: #e6e9e1; border-radius: 2px; transition: background 180ms ease; }
+      .stage { height: 4px; background: #3a4038; border-radius: 2px; transition: background 180ms ease; }
       .stage.active { background: var(--amber); }
       .stage.complete { background: var(--teal); }
 
@@ -198,7 +198,7 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
       .response-dot { width: 7px; height: 7px; border-radius: 50%; background: #9aa094; }
       .response-dot.success { background: var(--teal); }
       .response-dot.error { background: var(--danger); }
-      .response-body { flex: 1; min-height: 310px; padding: 16px; background: #171a17; color: #cdd6ca; overflow: auto; }
+      .response-body { flex: 1; min-height: 310px; padding: 16px; background: #111411; color: #cdd6ca; overflow: auto; }
       pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 0.75rem/1.6 "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
       .response-footer { min-height: 48px; padding: 8px 12px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 0.7rem; }
 
@@ -206,7 +206,7 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
       .activity-panel, .posture-panel { padding: 18px; box-shadow: none; }
       .activity-list { display: grid; gap: 0; min-height: 116px; }
       .activity-empty { min-height: 116px; display: grid; place-items: center; color: var(--muted); font-size: 0.78rem; }
-      .activity-item { min-height: 44px; display: grid; grid-template-columns: 84px 1fr auto; gap: 12px; align-items: center; border-top: 1px solid #eceee8; font-size: 0.76rem; }
+      .activity-item { min-height: 44px; display: grid; grid-template-columns: 84px 1fr auto; gap: 12px; align-items: center; border-top: 1px solid #343a33; font-size: 0.76rem; }
       .activity-time { color: var(--muted); font-variant-numeric: tabular-nums; }
       .activity-type { color: var(--muted); font-size: 0.68rem; text-transform: uppercase; font-weight: 800; }
       .activity-type.success { color: var(--teal); }
@@ -216,7 +216,7 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
       .posture-row span:first-child { color: var(--muted); }
       .posture-value { display: flex; align-items: center; gap: 6px; font-weight: 760; }
       .posture-value.good { color: var(--teal); }
-      .footer { border-top: 1px solid var(--line); background: #e8ebe3; }
+      .footer { border-top: 1px solid var(--line); background: #161a16; }
       .footer-inner { width: min(1240px, calc(100% - 40px)); min-height: 62px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; color: var(--muted); font-size: 0.72rem; }
       .toast { position: fixed; right: 20px; bottom: 20px; z-index: 10; max-width: min(380px, calc(100% - 40px)); padding: 12px 14px; border-radius: 6px; background: #171a17; color: #fff; box-shadow: 0 14px 36px rgba(0,0,0,0.22); transform: translateY(18px); opacity: 0; pointer-events: none; transition: 180ms ease; font-size: 0.78rem; }
       .toast.show { transform: translateY(0); opacity: 1; }
