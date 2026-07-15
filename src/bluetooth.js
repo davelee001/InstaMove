@@ -1,4 +1,5 @@
 const EventEmitter = require("events");
+const logger = require("./logger");
 
 /**
  * Simulated Bluetooth service for development/testing
@@ -37,7 +38,7 @@ class SimulatedCharacteristic {
       try {
         callback(buffer);
       } catch (error) {
-        console.error("Bluetooth notify error:", error.message);
+        logger.warn("bluetooth_notify_failed", { errorName: error.name });
       }
     });
   }
@@ -69,7 +70,7 @@ class BluetoothServer extends EventEmitter {
         const payload = JSON.parse(data.toString("utf8"));
         this.emit("request", payload);
       } catch (error) {
-        console.error("Bluetooth write parse error:", error.message);
+        logger.warn("bluetooth_payload_invalid", { errorName: error.name });
       }
     };
   }
@@ -78,8 +79,7 @@ class BluetoothServer extends EventEmitter {
     // Simulate advertising with immediate "ready" event
     setImmediate(() => {
       this.isAdvertising = true;
-      console.log(`Bluetooth server running in ${this.mode} mode`);
-      console.log(`Service: ${this.name}`);
+      logger.info("bluetooth_ready", { mode: this.mode, service: this.name });
       this.emit("ready");
     });
   }
@@ -87,13 +87,13 @@ class BluetoothServer extends EventEmitter {
   startAdvertising() {
     if (this.isAdvertising) return;
     this.isAdvertising = true;
-    console.log("Bluetooth advertising started (simulated)");
+    logger.info("bluetooth_advertising_started", { mode: this.mode });
   }
 
   stopAdvertising() {
     if (!this.isAdvertising) return;
     this.isAdvertising = false;
-    console.log("Bluetooth advertising stopped");
+    logger.info("bluetooth_advertising_stopped", { mode: this.mode });
   }
 
   sendResponse(data) {
@@ -105,7 +105,7 @@ class BluetoothServer extends EventEmitter {
       this.readChar.write(buffer);
       this.notifyChar.notify(buffer);
     } catch (error) {
-      console.error("Bluetooth send error:", error.message);
+      logger.warn("bluetooth_send_failed", { errorName: error.name });
     }
   }
 
