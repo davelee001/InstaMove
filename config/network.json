@@ -1,5 +1,9 @@
 {
   "defaultNode": "node-1",
   "retryAttempts": 3,
-  "timeoutMs": 5000
+  "timeoutMs": 5000,
+  "lndRequestTimeoutMs": 5000,
+  "lndMaxResponseBytes": 1048576,
+  "lndGetRetryAttempts": 3,
+  "lndRetryDelayMs": 150
 }
