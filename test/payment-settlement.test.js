@@ -148,7 +148,8 @@ const invalidResponses = [
   ["base64 with whitespace", { ...proof, payment_preimage: proof.payment_preimage + "\n" }],
   ["truncated preimage", { ...proof, payment_preimage: Buffer.alloc(31, 7).toString("base64") }],
   ["oversized preimage", { ...proof, payment_preimage: Buffer.alloc(33, 7).toString("base64") }],
-  ["zero preimage", { ...proof, payment_preimage: Buffer.alloc(32).toString("base64") }]
+  ["zero preimage", { ...proof, payment_preimage: Buffer.alloc(32).toString("base64") }],
+  ["hex instead of REST bytes", { ...proof, payment_preimage: preimage.toString("hex") }]
 ];
 
 for (const [name, response] of invalidResponses) {
