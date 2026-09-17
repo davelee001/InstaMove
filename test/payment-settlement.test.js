@@ -337,3 +337,21 @@ test("oversized payment responses stay unconfirmed", async () => {
   }
 });
 
+test("HTTP transport failures preserve reservations and never resend payments", async () => {
+  for (const behavior of ["timeout", "disconnect", "truncated"]) {
+    reset();
+    responseBehavior = behavior;
+    process.env.LND_REQUEST_TIMEOUT_MS = "100";
+    const key = `transport-failure-${behavior}`;
+    const first = await request(key);
+    assert.equal(first.status, 502);
+    assert.equal(first.body.code, "LND_PAYMENT_UNCONFIRMED");
+    responseBehavior = undefined;
+    const retry = await request(key);
+    assert.equal(retry.status, 409);
+    assert.equal(retry.body.code, "IDEMPOTENCY_RECONCILIATION_REQUIRED");
+    assert.equal(payments, 1);
+  }
+  process.env.LND_REQUEST_TIMEOUT_MS = "1000";
+});
+
