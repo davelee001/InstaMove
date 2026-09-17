@@ -39,8 +39,16 @@ async function execute({ key, payload, operation }) {
     try {
       result = await operation();
     } catch (error) {
-      releaseRecord({ key, fingerprint: requestFingerprint, ownerId });
+      if (error?.code !== "LND_PAYMENT_UNCONFIRMED") {
+        releaseRecord({ key, fingerprint: requestFingerprint, ownerId });
+      }
       throw error;
+    }
+
+    // HTTP/Bluetooth handlers serialize operational errors. Keep an uncertain
+    // payment pending even when it arrives as a response rather than a throw.
+    if (result?.body?.code === "LND_PAYMENT_UNCONFIRMED") {
+      return { replayed: false, result };
     }
 
     try {
