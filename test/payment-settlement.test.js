@@ -247,3 +247,16 @@ test("explicit failure overrides valid proof and never exposes upstream details"
   }
 });
 
+test("settleInvoice shares validation and only timestamps verified settlement", async () => {
+  reset({});
+  await assert.rejects(() => lightning.settleInvoice({ paymentRequest: "different" }, invoice), assertUnconfirmed);
+  reset({ payment_error: "no route" });
+  const failed = await lightning.settleInvoice({ paymentRequest: "different" }, invoice);
+  assert.equal(failed.settled, false);
+  assert.equal(failed.settledAt, null);
+  reset();
+  const settled = await lightning.settleInvoice({ paymentRequest: "different" }, invoice);
+  assert.equal(settled.settled, true);
+  assert.ok(settled.settledAt);
+});
+
