@@ -53,3 +53,26 @@ The first database initialization imports the legacy JSON collections and record
 For a simple consistent backup, stop InstaMove cleanly and copy the SQLite database after shutdown has completed. For online backups, use a SQLite-aware backup tool rather than copying only the main file while WAL mode is active. Restore the database and its filesystem permissions before starting a single InstaMove instance for verification.
 
 Completed idempotency records are retained for 24 hours by default; change this with `IDEMPOTENCY_RETENTION_MS`. Pending records are never expired automatically. They indicate that the process stopped after reserving a request but before durably recording its outcome. Reconcile the payment with LND before modifying such a record; automatic retry could duplicate a successful payment.
+
+## Payment Confirmation
+
+For the synchronous LND payment endpoint, InstaMove reports settlement only after
+validating 32-byte base64 payment hash and preimage fields and checking that
+SHA-256(preimage) matches both the returned hash and the decoded invoice's hash.
+The preimage is never used as the public payment ID. Explicit upstream failures
+remain failures; empty, malformed, contradictory, or incomplete confirmation
+responses cannot produce a settled response.
+
+An unusable payment response or a transport failure after dispatch returns
+HTTP 502 with code `LND_PAYMENT_UNCONFIRMED`. This means the outcome is unknown,
+not that no funds moved. The idempotency reservation stays pending, survives
+restart, and does not expire with completed-record retention. Reusing its key
+returns `IDEMPOTENCY_RECONCILIATION_REQUIRED` without dispatching another payment.
+Do not submit the payment under a new key. Reconcile it with LND before manually
+resolving its reservation. Automated reconciliation is not implemented.
+
+This validation trusts the configured LND node to decode the requested invoice
+correctly. It does not replace TLS verification or protect against a compromised
+LND node. Existing stored results are not retroactively revalidated.
+
+Reference: [LND SendPaymentSync](https://api.lightning.community/api/lnd/lightning/send-payment-sync/index.html).
