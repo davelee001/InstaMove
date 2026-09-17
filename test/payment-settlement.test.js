@@ -232,3 +232,18 @@ test("explicit success still requires proof and accepts uppercase invoice hash",
   assert.equal(result.success, true);
 });
 
+test("explicit failure overrides valid proof and never exposes upstream details", async () => {
+  for (const response of [
+    { ...proof, payment_error: "upstream-secret", status: "SUCCEEDED" },
+    { ...proof, status: "FAILED" }
+  ]) {
+    reset(response);
+    const result = await lightning.settlePaymentRequest({ paymentRequest: invoice });
+    assert.equal(result.status, "error");
+    assert.equal(result.payment.status, "failed");
+    assert.equal(result.payment.success, false);
+    assert.equal(result.payment.paymentId, null);
+    assert.equal(JSON.stringify(result).includes("upstream-secret"), false);
+  }
+});
+
