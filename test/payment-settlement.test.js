@@ -140,7 +140,8 @@ const invalidResponses = [
   ["unexpected status", { ...proof, status: "settled" }],
   ["malformed error type", { ...proof, payment_error: false }],
   ["null error", { ...proof, payment_error: null }],
-  ["numeric error", { ...proof, payment_error: 0 }]
+  ["numeric error", { ...proof, payment_error: 0 }],
+  ["error object", { ...proof, payment_error: {} }]
 ];
 
 for (const [name, response] of invalidResponses) {
