@@ -123,7 +123,8 @@ async function request(key) {
 const invalidResponses = [
   ["empty object", {}],
   ["null", null],
-  ["array", []]
+  ["array", []],
+  ["string", "success"]
 ];
 
 for (const [name, response] of invalidResponses) {
