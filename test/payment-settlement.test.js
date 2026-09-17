@@ -205,3 +205,23 @@ test("non-object decoded invoices prevent payment dispatch", async () => {
   }
 });
 
+test("valid proof settles with omitted or empty default error and no status", async () => {
+  for (const mode of ["lnd", "regtest"]) {
+    process.env.LIGHTNING_MODE = mode;
+    for (const omitError of [false, true]) {
+      reset({ ...proof });
+      if (omitError) delete paymentResponse.payment_error;
+      const result = await lightning.settlePaymentRequest({ paymentRequest: invoice });
+      assert.equal(result.status, "ok");
+      assert.equal(result.payment.status, "settled");
+      assert.equal(result.payment.success, true);
+      assert.equal(result.payment.paymentId, proof.payment_hash);
+      assert.equal(result.payment.mode, mode);
+      assert.equal(JSON.stringify(result).includes(proof.payment_preimage), false);
+      assert.equal(payments, 1);
+      assert.equal(decodes, 1);
+    }
+  }
+  process.env.LIGHTNING_MODE = "lnd";
+});
+
