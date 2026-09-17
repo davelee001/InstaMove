@@ -319,3 +319,10 @@ test("noncanonical padding bits cannot confirm settlement", async () => {
   await assert.rejects(() => lightning.payInvoice(invoice), assertUnconfirmed);
 });
 
+test("redirect responses cannot confirm payment even with valid proof", async () => {
+  reset();
+  responseStatus = 302;
+  await assert.rejects(() => lightning.payInvoice(invoice), assertUnconfirmed);
+  assert.equal(payments, 1);
+});
+
