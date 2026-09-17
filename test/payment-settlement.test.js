@@ -141,7 +141,8 @@ const invalidResponses = [
   ["malformed error type", { ...proof, payment_error: false }],
   ["null error", { ...proof, payment_error: null }],
   ["numeric error", { ...proof, payment_error: 0 }],
-  ["error object", { ...proof, payment_error: {} }]
+  ["error object", { ...proof, payment_error: {} }],
+  ["conflicting error envelope", { ...proof, error: "upstream-secret" }]
 ];
 
 for (const [name, response] of invalidResponses) {
