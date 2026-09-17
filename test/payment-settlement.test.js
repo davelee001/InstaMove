@@ -281,3 +281,17 @@ test("HTTP ambiguous payment stays pending across restart and retention expiry",
   assert.equal(payments, 1);
 });
 
+test("direct idempotency execution also retains an unconfirmed reservation", async () => {
+  reset({});
+  const idempotency = require("../src/idempotency");
+  const options = {
+    key: "unconfirmed-payment-direct",
+    payload: { paymentRequest: invoice },
+    operation: () => lightning.payInvoice(invoice)
+  };
+  await assert.rejects(() => idempotency.execute(options), assertUnconfirmed);
+  await assert.rejects(() => idempotency.execute(options),
+    (error) => error.code === "IDEMPOTENCY_RECONCILIATION_REQUIRED");
+  assert.equal(payments, 1);
+});
+
