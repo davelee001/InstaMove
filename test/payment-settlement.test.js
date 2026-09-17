@@ -225,3 +225,10 @@ test("valid proof settles with omitted or empty default error and no status", as
   process.env.LIGHTNING_MODE = "lnd";
 });
 
+test("explicit success still requires proof and accepts uppercase invoice hash", async () => {
+  reset({ ...proof, status: "SUCCEEDED" });
+  decodeResponse = { ...decoded, payment_hash: decoded.payment_hash.toUpperCase() };
+  const result = await lightning.payInvoice(invoice);
+  assert.equal(result.success, true);
+});
+
