@@ -136,7 +136,8 @@ const invalidResponses = [
   ["unknown with proof", { ...proof, status: "UNKNOWN" }],
   ["initiated with proof", { ...proof, status: "INITIATED" }],
   ["numeric status", { ...proof, status: 2 }],
-  ["null status", { ...proof, status: null }]
+  ["null status", { ...proof, status: null }],
+  ["unexpected status", { ...proof, status: "settled" }]
 ];
 
 for (const [name, response] of invalidResponses) {
