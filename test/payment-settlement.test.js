@@ -295,3 +295,20 @@ test("direct idempotency execution also retains an unconfirmed reservation", asy
   assert.equal(payments, 1);
 });
 
+test("HTTP confirmed payment returns settlement and replays without payment or preimage", async () => {
+  reset();
+  const key = "confirmed-payment-http";
+  const first = await request(key);
+  const second = await request(key);
+  assert.equal(first.status, 200);
+  assert.equal(first.body.invoiceSettled, true);
+  assert.equal(first.body.payment.paymentId, proof.payment_hash);
+  assert.equal(second.headers.get("idempotency-replayed"), "true");
+  assert.deepEqual(second.body, first.body);
+  assert.equal(payments, 1);
+  assert.equal(JSON.stringify(first.body).includes(proof.payment_preimage), false);
+  const row = require("../src/database").getDatabase()
+    .prepare("SELECT result_json FROM idempotency_records WHERE key = ?").get(key);
+  assert.equal(row.result_json.includes(proof.payment_preimage), false);
+});
+
