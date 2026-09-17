@@ -167,3 +167,13 @@ for (const [name, response] of invalidResponses) {
     assert.equal(decodes, 1);
   });
 }
+
+test("empty and malformed HTTP bodies cannot confirm settlement", async () => {
+  for (const body of ["", "{not-json", " "]) {
+    reset();
+    rawResponse = body;
+    await assert.rejects(() => lightning.payInvoice(invoice), assertUnconfirmed);
+    assert.equal(payments, 1);
+  }
+});
+
