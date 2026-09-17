@@ -177,3 +177,10 @@ test("empty and malformed HTTP bodies cannot confirm settlement", async () => {
   }
 });
 
+test("HTTP failure with a valid-looking proof cannot confirm settlement", async () => {
+  reset();
+  responseStatus = 503;
+  await assert.rejects(() => lightning.payInvoice(invoice), assertUnconfirmed);
+  assert.equal(payments, 1);
+});
+
