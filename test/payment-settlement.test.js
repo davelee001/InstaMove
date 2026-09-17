@@ -121,7 +121,7 @@ async function request(key) {
 }
 
 const invalidResponses = [
-
+  ["empty object", {}]
 ];
 
 for (const [name, response] of invalidResponses) {
