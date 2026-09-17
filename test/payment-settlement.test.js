@@ -196,3 +196,12 @@ test("missing or malformed decoded invoice hashes prevent payment dispatch", asy
   }
 });
 
+test("non-object decoded invoices prevent payment dispatch", async () => {
+  for (const value of [null, [], "invoice"]) {
+    reset();
+    decodeResponse = value;
+    await assert.rejects(() => lightning.payInvoice(invoice), (error) => error.code === "LND_INVALID_RESPONSE");
+    assert.equal(payments, 0);
+  }
+});
+
