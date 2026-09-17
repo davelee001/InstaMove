@@ -125,7 +125,8 @@ const invalidResponses = [
   ["null", null],
   ["array", []],
   ["string", "success"],
-  ["number", 1]
+  ["number", 1],
+  ["boolean", true]
 ];
 
 for (const [name, response] of invalidResponses) {
