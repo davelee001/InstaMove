@@ -134,7 +134,8 @@ const invalidResponses = [
   ["success status alone", { status: "SUCCEEDED" }],
   ["in-flight with proof", { ...proof, status: "IN_FLIGHT" }],
   ["unknown with proof", { ...proof, status: "UNKNOWN" }],
-  ["initiated with proof", { ...proof, status: "INITIATED" }]
+  ["initiated with proof", { ...proof, status: "INITIATED" }],
+  ["numeric status", { ...proof, status: 2 }]
 ];
 
 for (const [name, response] of invalidResponses) {
