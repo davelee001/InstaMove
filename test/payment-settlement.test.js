@@ -312,3 +312,10 @@ test("HTTP confirmed payment returns settlement and replays without payment or p
   assert.equal(row.result_json.includes(proof.payment_preimage), false);
 });
 
+test("noncanonical padding bits cannot confirm settlement", async () => {
+  reset({ ...proof, payment_preimage: proof.payment_preimage.slice(0, -2) + "d=" });
+  // The permissive Node decoder produces the same bytes; strict validation must reject it.
+  assert.deepEqual(Buffer.from(paymentResponse.payment_preimage, "base64"), preimage);
+  await assert.rejects(() => lightning.payInvoice(invoice), assertUnconfirmed);
+});
+
