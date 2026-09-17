@@ -130,7 +130,8 @@ const invalidResponses = [
   ["error envelope", { error: "upstream-secret", code: 13 }],
   ["empty error alone", { payment_error: "" }],
   ["hash without proof", { payment_hash: proof.payment_hash }],
-  ["proof without hash", { payment_preimage: proof.payment_preimage }]
+  ["proof without hash", { payment_preimage: proof.payment_preimage }],
+  ["success status alone", { status: "SUCCEEDED" }]
 ];
 
 for (const [name, response] of invalidResponses) {
