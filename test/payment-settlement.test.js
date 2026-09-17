@@ -150,7 +150,8 @@ const invalidResponses = [
   ["oversized preimage", { ...proof, payment_preimage: Buffer.alloc(33, 7).toString("base64") }],
   ["zero preimage", { ...proof, payment_preimage: Buffer.alloc(32).toString("base64") }],
   ["hex instead of REST bytes", { ...proof, payment_preimage: preimage.toString("hex") }],
-  ["non-string preimage", { ...proof, payment_preimage: Array.from(preimage) }]
+  ["non-string preimage", { ...proof, payment_preimage: Array.from(preimage) }],
+  ["malformed hash", { ...proof, payment_hash: "invalid" }]
 ];
 
 for (const [name, response] of invalidResponses) {
