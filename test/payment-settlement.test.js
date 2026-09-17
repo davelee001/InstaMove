@@ -133,7 +133,8 @@ const invalidResponses = [
   ["proof without hash", { payment_preimage: proof.payment_preimage }],
   ["success status alone", { status: "SUCCEEDED" }],
   ["in-flight with proof", { ...proof, status: "IN_FLIGHT" }],
-  ["unknown with proof", { ...proof, status: "UNKNOWN" }]
+  ["unknown with proof", { ...proof, status: "UNKNOWN" }],
+  ["initiated with proof", { ...proof, status: "INITIATED" }]
 ];
 
 for (const [name, response] of invalidResponses) {
