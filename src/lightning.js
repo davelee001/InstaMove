@@ -100,9 +100,92 @@ async function createInvoice({ requestId, amount, memo, expirySeconds }) {
   };
 }
 
+function unconfirmedPayment() {
+  return new AppError(
+    502,
+    "LND_PAYMENT_UNCONFIRMED",
+    "The Lightning payment outcome is unconfirmed; reconcile with LND before retrying"
+  );
+}
+
+function isResponseObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function decodePaymentBytes(value) {
+  // SendPaymentSync REST byte fields use canonical padded base64, not hex.
+  // Buffer.from alone is permissive: reject junk, truncation and invalid padding.
+  if (typeof value !== "string" || !/^[A-Za-z0-9+/]{43}=$/.test(value)) {
+    throw unconfirmedPayment();
+  }
+  const bytes = Buffer.from(value, "base64");
+  if (bytes.length !== 32 || bytes.toString("base64") !== value) {
+    throw unconfirmedPayment();
+  }
+  return bytes;
+}
+
+function validatePaymentResponse(response, expectedPaymentHash) {
+  if (!isResponseObject(response)) throw unconfirmedPayment();
+  if (response.payment_error !== undefined && typeof response.payment_error !== "string") {
+    throw unconfirmedPayment();
+  }
+
+  // Explicit failures take precedence even when a response also contains a proof.
+  if (response.payment_error || response.status === "FAILED") {
+    return { success: false, paymentId: null, status: "failed", mode: getRuntimeMode() };
+  }
+
+  // This endpoint is synchronous. A status from another API must never turn an
+  // in-flight, unknown or otherwise unexpected response into a settled payment.
+  if (response.status !== undefined && response.status !== "SUCCEEDED") {
+    throw unconfirmedPayment();
+  }
+  if (response.error !== undefined || response.code !== undefined) throw unconfirmedPayment();
+
+  const paymentHash = decodePaymentBytes(response.payment_hash);
+  const preimage = decodePaymentBytes(response.payment_preimage);
+  if (preimage.equals(Buffer.alloc(32))) throw unconfirmedPayment();
+  const proofHash = crypto.createHash("sha256").update(preimage).digest();
+  const invoiceHash = Buffer.from(expectedPaymentHash, "hex");
+  if (!crypto.timingSafeEqual(proofHash, paymentHash) ||
+      !crypto.timingSafeEqual(paymentHash, invoiceHash)) {
+    throw unconfirmedPayment();
+  }
+
+  return {
+    success: true,
+    // Keep the existing REST hash representation; never expose the preimage or
+    // manufacture a payment ID when the upstream response is incomplete.
+    paymentId: response.payment_hash,
+    status: "settled",
+    mode: getRuntimeMode()
+  };
+}
+
+async function sendDecodedPayment(paymentRequest, expectedPaymentHash) {
+  let response;
+  try {
+    response = await callLnd("/v1/channels/transactions", {
+      method: "POST",
+      body: {
+        payment_request: paymentRequest,
+        fee_limit_sat: Number(process.env.LND_FEE_LIMIT_SAT || lightningConfig.feeLimitSat || 20)
+      }
+    });
+  } catch (error) {
+    // A lost or unusable response does not prove that the payment failed.
+    if (["LND_TIMEOUT", "LND_UNAVAILABLE", "LND_HTTP_ERROR",
+      "LND_INVALID_RESPONSE", "LND_RESPONSE_TOO_LARGE"].includes(error.code)) {
+      throw unconfirmedPayment();
+    }
+    throw error;
+  }
+  return validatePaymentResponse(response, expectedPaymentHash);
+}
+
 async function payInvoice(paymentRequest) {
   const normalizedPaymentRequest = validateInvoice(paymentRequest);
-
   if (!isRealMode()) {
     return {
       success: true,
@@ -111,23 +194,8 @@ async function payInvoice(paymentRequest) {
       mode: "mock"
     };
   }
-
-  const response = await callLnd("/v1/channels/transactions", {
-    method: "POST",
-    body: {
-      payment_request: normalizedPaymentRequest,
-      fee_limit_sat: Number(process.env.LND_FEE_LIMIT_SAT || lightningConfig.feeLimitSat || 20)
-    }
-  });
-
-  const failed = Boolean(response.payment_error) || String(response.status || "").toUpperCase() === "FAILED";
-
-  return {
-    success: !failed,
-    paymentId: response.payment_hash || response.payment_preimage || `pay-${Date.now()}`,
-    status: failed ? "failed" : "settled",
-    mode: getRuntimeMode()
-  };
+  const decoded = await decodeInvoice(normalizedPaymentRequest);
+  return sendDecodedPayment(normalizedPaymentRequest, decoded.paymentHash);
 }
 
 async function decodeInvoice(paymentRequest, fallbackAmount) {
@@ -153,6 +221,10 @@ async function decodeInvoice(paymentRequest, fallbackAmount) {
   }
 
   const response = await callLnd(`/v1/payreq/${encodeURIComponent(normalizedPaymentRequest)}`);
+  if (!isResponseObject(response) || typeof response.payment_hash !== "string" ||
+      !/^[0-9a-fA-F]{64}$/.test(response.payment_hash)) {
+    throw new AppError(502, "LND_INVALID_RESPONSE", "The Lightning service returned an invalid decoded invoice");
+  }
   const amount = Number(response.num_satoshis || response.num_sats || fallbackAmount || 0);
 
   return {
@@ -161,6 +233,7 @@ async function decodeInvoice(paymentRequest, fallbackAmount) {
     currency: "sats",
     memo: response.description || response.memo || lightningConfig.invoiceMemo,
     destination: response.destination || null,
+    paymentHash: response.payment_hash.toLowerCase(),
     descriptionHash: response.description_hash || null,
     expiry: response.expiry || null,
     mode: getRuntimeMode(),
@@ -302,7 +375,7 @@ async function settleInvoice(invoiceRecord, paymentRequest) {
     status: payment.status === "settled" ? "settled" : "failed",
     settled: payment.status === "settled",
     settlementPending: false,
-    settledAt: new Date().toISOString(),
+    settledAt: payment.status === "settled" ? new Date().toISOString() : null,
     paymentId: payment.paymentId,
     paymentRequest: invoiceRecord.paymentRequest,
     mode: payment.mode,
@@ -322,7 +395,9 @@ async function settlePaymentRequest({ paymentRequest, fallbackAmount }) {
     throw new AppError(422, "AMOUNT_LIMIT_EXCEEDED", `Invoice amount must be between 1 and ${maxAmount} sats`);
   }
 
-  const payment = await payInvoice(paymentRequest);
+  const payment = decoded.mode === "mock"
+    ? await payInvoice(paymentRequest)
+    : await sendDecodedPayment(validateInvoice(paymentRequest), decoded.paymentHash);
   const amountLabel = `${amount} sats`;
   const destination = decoded.destination || decoded.memo || "invoice destination";
   const confirmationMessage = payment.success

@@ -76,7 +76,7 @@ test("an LND payment error is never reported as settled", async () => {
   const server = http.createServer((req, res) => {
     res.setHeader("Content-Type", "application/json");
     if (req.url.startsWith("/v1/payreq/")) {
-      res.end(JSON.stringify({ num_satoshis: "10", destination: "remote-node" }));
+      res.end(JSON.stringify({ num_satoshis: "10", destination: "remote-node", payment_hash: "11".repeat(32) }));
       return;
     }
     res.end(JSON.stringify({ payment_error: "route unavailable", payment_hash: "payment-hash" }));
