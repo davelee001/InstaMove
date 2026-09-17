@@ -143,7 +143,8 @@ const invalidResponses = [
   ["numeric error", { ...proof, payment_error: 0 }],
   ["error object", { ...proof, payment_error: {} }],
   ["conflicting error envelope", { ...proof, error: "upstream-secret" }],
-  ["conflicting code", { ...proof, code: 13 }]
+  ["conflicting code", { ...proof, code: 13 }],
+  ["invalid base64", { ...proof, payment_preimage: "!".repeat(44) }]
 ];
 
 for (const [name, response] of invalidResponses) {
