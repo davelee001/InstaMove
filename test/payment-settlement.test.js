@@ -152,7 +152,11 @@ const invalidResponses = [
   ["hex instead of REST bytes", { ...proof, payment_preimage: preimage.toString("hex") }],
   ["non-string preimage", { ...proof, payment_preimage: Array.from(preimage) }],
   ["malformed hash", { ...proof, payment_hash: "invalid" }],
-  ["wrong proof", { ...proof, payment_preimage: otherPreimage.toString("base64") }]
+  ["wrong proof", { ...proof, payment_preimage: otherPreimage.toString("base64") }],
+  ["proof for another invoice", {
+    ...proof, payment_hash: otherHash.toString("base64"),
+    payment_preimage: otherPreimage.toString("base64")
+  }]
 ];
 
 for (const [name, response] of invalidResponses) {
