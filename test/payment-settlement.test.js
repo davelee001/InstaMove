@@ -126,7 +126,8 @@ const invalidResponses = [
   ["array", []],
   ["string", "success"],
   ["number", 1],
-  ["boolean", true]
+  ["boolean", true],
+  ["error envelope", { error: "upstream-secret", code: 13 }]
 ];
 
 for (const [name, response] of invalidResponses) {
