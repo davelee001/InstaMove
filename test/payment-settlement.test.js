@@ -326,3 +326,14 @@ test("redirect responses cannot confirm payment even with valid proof", async ()
   assert.equal(payments, 1);
 });
 
+test("oversized payment responses stay unconfirmed", async () => {
+  reset({ ...proof, extra: "x".repeat(2048) });
+  process.env.LND_MAX_RESPONSE_BYTES = "1024";
+  try {
+    await assert.rejects(() => lightning.payInvoice(invoice), assertUnconfirmed);
+    assert.equal(payments, 1);
+  } finally {
+    delete process.env.LND_MAX_RESPONSE_BYTES;
+  }
+});
+
