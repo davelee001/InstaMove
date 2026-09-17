@@ -124,7 +124,8 @@ const invalidResponses = [
   ["empty object", {}],
   ["null", null],
   ["array", []],
-  ["string", "success"]
+  ["string", "success"],
+  ["number", 1]
 ];
 
 for (const [name, response] of invalidResponses) {
