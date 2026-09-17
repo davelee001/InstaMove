@@ -62,10 +62,14 @@ function requestJson(urlString, { method = "GET", headers = {}, body, timeoutMs,
           chunks.push(chunk);
         });
 
-        response.on("error", reject);
+        response.on("error", (error) => {
+          reject(error instanceof AppError
+            ? error
+            : new AppError(502, "LND_UNAVAILABLE", "The Lightning service response was interrupted"));
+        });
         response.on("end", () => {
           const responseBody = Buffer.concat(chunks).toString("utf8");
-          if (response.statusCode >= 400) {
+          if (response.statusCode < 200 || response.statusCode >= 300) {
             reject(new AppError(502, "LND_HTTP_ERROR", "The Lightning service rejected the request", {
               upstreamStatus: response.statusCode
             }));
