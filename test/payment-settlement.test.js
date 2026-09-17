@@ -355,3 +355,30 @@ test("HTTP transport failures preserve reservations and never resend payments", 
   process.env.LND_REQUEST_TIMEOUT_MS = "1000";
 });
 
+test("Bluetooth cannot announce settlement or replay an unconfirmed payment", async () => {
+  reset({});
+  const bt = require("../src/bluetooth").getBluetooth();
+  const payload = { paymentRequest: invoice, idempotencyKey: "bluetooth-unconfirmed-payment" };
+  async function receive() {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        bt.notifyChar.unsubscribe(onResponse);
+        reject(new Error("No Bluetooth response"));
+      }, 2000);
+      function onResponse(buffer) {
+        clearTimeout(timeout);
+        bt.notifyChar.unsubscribe(onResponse);
+        resolve(JSON.parse(buffer.toString("utf8")));
+      }
+      bt.notifyChar.subscribe(onResponse);
+      bt.receiveData(payload);
+    });
+  }
+  const first = await receive();
+  assert.equal(first.code, "LND_PAYMENT_UNCONFIRMED");
+  assert.equal(first.invoiceSettled, undefined);
+  paymentResponse = proof;
+  const second = await receive();
+  assert.equal(second.code, "IDEMPOTENCY_RECONCILIATION_REQUIRED");
+  assert.equal(payments, 1);
+});
