@@ -137,7 +137,8 @@ const invalidResponses = [
   ["initiated with proof", { ...proof, status: "INITIATED" }],
   ["numeric status", { ...proof, status: 2 }],
   ["null status", { ...proof, status: null }],
-  ["unexpected status", { ...proof, status: "settled" }]
+  ["unexpected status", { ...proof, status: "settled" }],
+  ["malformed error type", { ...proof, payment_error: false }]
 ];
 
 for (const [name, response] of invalidResponses) {
