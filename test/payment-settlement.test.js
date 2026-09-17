@@ -145,7 +145,8 @@ const invalidResponses = [
   ["conflicting error envelope", { ...proof, error: "upstream-secret" }],
   ["conflicting code", { ...proof, code: 13 }],
   ["invalid base64", { ...proof, payment_preimage: "!".repeat(44) }],
-  ["base64 with whitespace", { ...proof, payment_preimage: proof.payment_preimage + "\n" }]
+  ["base64 with whitespace", { ...proof, payment_preimage: proof.payment_preimage + "\n" }],
+  ["truncated preimage", { ...proof, payment_preimage: Buffer.alloc(31, 7).toString("base64") }]
 ];
 
 for (const [name, response] of invalidResponses) {
