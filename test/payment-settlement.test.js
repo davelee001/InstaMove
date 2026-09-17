@@ -260,3 +260,24 @@ test("settleInvoice shares validation and only timestamps verified settlement", 
   assert.ok(settled.settledAt);
 });
 
+test("HTTP ambiguous payment stays pending across restart and retention expiry", async () => {
+  reset({});
+  const key = "unconfirmed-payment-http";
+  const first = await request(key);
+  assert.equal(first.status, 502);
+  assert.equal(first.body.code, "LND_PAYMENT_UNCONFIRMED");
+  assert.equal(first.body.invoiceSettled, undefined);
+  const { getDatabase, closeDatabases } = require("../src/database");
+  const row = getDatabase().prepare("SELECT state, result_json FROM idempotency_records WHERE key = ?").get(key);
+  assert.equal(row.state, "pending");
+  assert.equal(row.result_json, null);
+  getDatabase().prepare("UPDATE idempotency_records SET created_at = ? WHERE key = ?")
+    .run("2000-01-01T00:00:00.000Z", key);
+  closeDatabases();
+  paymentResponse = proof;
+  const retry = await request(key);
+  assert.equal(retry.status, 409);
+  assert.equal(retry.body.code, "IDEMPOTENCY_RECONCILIATION_REQUIRED");
+  assert.equal(payments, 1);
+});
+
