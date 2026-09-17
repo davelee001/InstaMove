@@ -127,7 +127,8 @@ const invalidResponses = [
   ["string", "success"],
   ["number", 1],
   ["boolean", true],
-  ["error envelope", { error: "upstream-secret", code: 13 }]
+  ["error envelope", { error: "upstream-secret", code: 13 }],
+  ["empty error alone", { payment_error: "" }]
 ];
 
 for (const [name, response] of invalidResponses) {
