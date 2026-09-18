@@ -7,6 +7,7 @@ const { beforeEach, afterEach, test } = require("node:test");
 const { getDatabase, closeDatabases } = require("../src/database");
 const idempotency = require("../src/idempotency");
 
+const originalEnvironment = { ...process.env };
 
 
 
