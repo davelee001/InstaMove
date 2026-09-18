@@ -44,6 +44,7 @@ function ready(server) { server.handleEvent({ type: "status", state: "advertisin
 
 test("Windows backend readiness follows actual helper state and process exit", () => {
   const { server, child, launchOptions } = create();
+  assert.equal(server.getStatus().ready, false);
   ready(server); assert.equal(server.getStatus().ready, true);
   child.emit("exit", 1); assert.equal(server.getStatus().ready, false);
   assert.equal(launchOptions.windowsHide, true);
