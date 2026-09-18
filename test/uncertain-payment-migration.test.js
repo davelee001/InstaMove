@@ -19,6 +19,14 @@ beforeEach(() => {
   process.env.INSTAMOVE_DB_PATH = path.join(directory, "test.sqlite");
 });
 
+afterEach(() => {
+  closeDatabases();
+  fs.rmSync(directory, { recursive: true, force: true });
+  for (const name of ["INSTAMOVE_DATA_DIR", "INSTAMOVE_DB_PATH"]) {
+    if (originalEnvironment[name] === undefined) delete process.env[name];
+    else process.env[name] = originalEnvironment[name];
+  }
+});
 
 
 
