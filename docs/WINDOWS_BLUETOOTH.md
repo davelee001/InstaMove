@@ -34,3 +34,4 @@ the development default and is explicitly labeled in the web workspace. It canno
 satisfy readiness for real LND/regtest deployments. Missing keys, helper binaries,
 adapter support, or advertising cause Windows readiness to fail; there is no
 fallback to simulation. HTTP Bluetooth injection and uncorrelated broadcasts are
+disabled in Windows mode. Restart the service after restoring a stopped radio.
