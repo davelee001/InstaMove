@@ -3,6 +3,11 @@
 Status: Draft for implementation review  
 Protocol identifier: `instamove/1`
 
+Implementation note: this document describes the target Noise/CBOR protocol,
+not the current native Windows transport. The implemented trusted-device
+`instamove-psk/1` transport and its limits are documented in
+[Windows Bluetooth](WINDOWS_BLUETOOTH.md). Deferred settlement remains a design.
+
 ## Scope
 
 InstaMove uses Bluetooth Low Energy (BLE) as a local transport between a payer device and a merchant-side bridge. BLE removes the requirement for the payer device to reach the internet directly. It does not remove the Lightning Network's requirement for a connected node to verify and settle a payment.
