@@ -54,3 +54,4 @@ Bluetooth key. Every encryption operation must use a fresh cryptographic nonce.
 | --- | --- |
 | Service | `d1f0b001-7c44-4e70-9bc9-4c7037a18c01` |
 | Request, write with response | `d1f0b002-7c44-4e70-9bc9-4c7037a18c01` |
+| Response, notify | `d1f0b003-7c44-4e70-9bc9-4c7037a18c01` |
