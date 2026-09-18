@@ -50,6 +50,7 @@ test("Windows backend readiness follows actual helper state and process exit", (
 test("Windows backend refuses missing key, short retention, unsupported OS and failed helper", () => {
   delete process.env.INSTAMOVE_BLUETOOTH_KEY;
   const missing = new WindowsBluetoothServer({ platform: "win32" });
+  assert.equal(create({ platform: "linux" }).server.getStatus().ready, false);
   process.env.INSTAMOVE_BLUETOOTH_KEY = key;
   process.env.IDEMPOTENCY_RETENTION_MS = "10";
   assert.equal(new WindowsBluetoothServer({ platform: "win32" }).getStatus().state, "retention_too_short");
