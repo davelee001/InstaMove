@@ -63,6 +63,7 @@ for (const [label, value] of [
   test(`readiness fails closed for invalid ${label}`, async () => {
     reset(); response = value;
     const result = await fetch(url + "/ready");
+    assert.equal((await result.json()).checks.lightningHealthy, false);
   });
 }
 test("upstream authentication and HTTP failures make readiness fail without retries", async () => {
