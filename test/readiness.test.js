@@ -63,6 +63,7 @@ for (const [label, value] of [
   test(`readiness fails closed for invalid ${label}`, async () => {
     reset(); response = value;
     const result = await fetch(url + "/ready");
+    assert.equal(result.status, 503);
     assert.equal((await result.json()).checks.lightningHealthy, false);
   });
 }
