@@ -57,3 +57,4 @@ Bluetooth key. Every encryption operation must use a fresh cryptographic nonce.
 | Response, notify | `d1f0b003-7c44-4e70-9bc9-4c7037a18c01` |
 
 Subscribe to responses before writing. Encrypt this JSON shape, then fragment the
+UTF-8 envelope into BLE writes:
