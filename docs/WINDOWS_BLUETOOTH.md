@@ -42,3 +42,4 @@ This is a pre-shared-key transport for provisioned trusted devices. It is separa
 from the draft `instamove/1` Noise/CBOR protocol, which is not implemented. It does
 not provide forward secrecy, individual client identities, per-client revocation,
 or deferred offline settlement. Rotate the shared key on all provisioned devices
+if one is compromised. Do not present this as an open public-payer protocol.
