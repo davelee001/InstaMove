@@ -27,3 +27,4 @@ out-of-band process. Do not reuse the storage encryption key or API bearer token
 Possession of this key grants access to the existing payment/invoice request flow,
 not administrative routes. The native helper receives no application secrets;
 encryption and request validation happen in Node. Set
+`INSTAMOVE_BLUETOOTH_HELPER` to an absolute executable path if deploying elsewhere.
