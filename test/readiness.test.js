@@ -102,5 +102,6 @@ test("real Lightning readiness rejects simulated, stopped and unavailable Blueto
       const result = await fetch(url + "/ready");
     }
     bluetooth.getStatus = () => ({ mode: "windows", ready: true });
+    assert.equal((await fetch(url + "/ready")).status, 200);
   } finally { bluetooth.getStatus = originalStatus; }
 });
