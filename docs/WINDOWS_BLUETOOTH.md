@@ -31,3 +31,4 @@ encryption and request validation happen in Node. Set
 
 `BLUETOOTH_MODE` accepts only `simulated`, `windows`, or `disabled`. Simulation is
 the development default and is explicitly labeled in the web workspace. It cannot
+satisfy readiness for real LND/regtest deployments. Missing keys, helper binaries,
