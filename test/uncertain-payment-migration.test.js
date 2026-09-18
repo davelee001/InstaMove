@@ -28,6 +28,12 @@ afterEach(() => {
   }
 });
 
+function seed(key, result, date = oldDate) {
+  getDatabase().prepare(`INSERT INTO idempotency_records
+    (key, fingerprint, state, owner_id, result_json, created_at, updated_at)
+    VALUES (?, ?, 'completed', 'old-worker', ?, ?, ?)`)
+    .run(key, fingerprint, JSON.stringify(result), date, date);
+}
 
 
 
