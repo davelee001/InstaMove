@@ -85,6 +85,7 @@ test("session limit and busy request prevent unbounded or overlapping work", () 
   let count = 0; server.on("request", () => count++);
   send(server, request()); send(server, request());
   for (let i = 0; i < 30; i++) send(server, request(), `peer-${i}`);
+  assert.equal(count, 8);
 });
 test("disconnect discards late responses and HTTP injection is unavailable", () => {
   const { server, child } = create(); ready(server);
