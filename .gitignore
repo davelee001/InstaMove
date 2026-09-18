@@ -6,3 +6,6 @@ node_modules/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+native/**/bin/
+native/**/obj/
+native/**/publish/
