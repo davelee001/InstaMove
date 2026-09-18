@@ -60,3 +60,12 @@ for (const code of ["LND_TIMEOUT", "LND_UNAVAILABLE", "LND_HTTP_ERROR",
 
 
 
+test("migration runs once and does not reclassify subsequent pre-dispatch errors", async () => {
+  await idempotency.execute({ key: "initialize", payload, operation: async () => ({ statusCode: 200 }) });
+  seed("later-decode-timeout", { statusCode: 504, body: { status: "error", code: "LND_TIMEOUT" } },
+    new Date().toISOString());
+  closeDatabases();
+  const replay = await idempotency.execute({
+    key: "later-decode-timeout", payload, operation: async () => assert.fail("Must replay")
+  });
+});
