@@ -64,3 +64,4 @@ UTF-8 envelope into BLE writes:
   "type": "request",
   "expiresAt": 1800000000000,
   "payload": {
+    "idempotencyKey": "unique-payment-key",
