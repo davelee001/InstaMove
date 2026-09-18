@@ -1,8 +1,14 @@
 # InstaMove
 
-InstaMove is a Node.js backend and landing page for testing Lightning-style invoice flows, local node requests, and Bluetooth-style JSON exchange.
+InstaMove is a Node.js payment backend and operations workspace with LND integration, durable SQLite storage, and native Windows Bluetooth Low Energy (BLE) support for provisioned trusted devices.
 
 It accepts a request, processes the payload, and returns a JSON response. In local mode, the app recognizes built-in invoice IDs that map to fixed amounts.
+
+## Current Status
+
+The project is ready for controlled staging evaluation. It is not yet validated for production payments. The latest local validation passed 130 automated tests, and the native Windows helper compiled and successfully advertised on the development computer's Intel Bluetooth adapter.
+
+Before enabling real funds, complete live LND regtest payment and failure-recovery testing, pairing and message exchange with a second physical BLE device, and deployment verification for HTTPS, secrets, persistent storage, backups, and monitoring. Uncertain payments require operator reconciliation; automated reconciliation is not implemented.
 
 ## Web Workspace
 
@@ -34,16 +40,23 @@ Optional:
 - `LND_REQUEST_TIMEOUT_MS=5000`
 - `LND_MAX_RESPONSE_BYTES=1048576`
 - `LND_GET_RETRY_ATTEMPTS=3`
+- `LND_READINESS_TIMEOUT_MS=2000`
 - `INSTAMOVE_DB_PATH=./data/instamove.sqlite`
 - `IDEMPOTENCY_RETENTION_MS=86400000`
 
 Regtest keeps the payment flow off real money while still using real Lightning APIs when your regtest LND nodes are connected.
+
+For `regtest` or `lnd`, select `BLUETOOTH_MODE=windows` with the native helper configured, or explicitly select `BLUETOOTH_MODE=disabled` for an HTTP-only deployment. Simulated Bluetooth cannot satisfy readiness in these modes. The LND macaroon must permit `GetInfo` as well as the RPCs needed by your payment flow.
 
 LND requests use bounded timeouts and response sizes. Only idempotent GET requests are retried; invoice creation, channel operations, and payments are never automatically replayed by the transport client.
 
 Runtime state is stored transactionally in SQLite. On first startup, existing node, request, channel, invoice, and idempotency JSON files are imported once. After import, SQLite is authoritative and later edits to those JSON files are ignored. Set `INSTAMOVE_DB_PATH` to place the database outside the repository.
 
 Idempotency reservations are written before payment processing and completed only after the result is durable. A request left pending by a process crash returns `IDEMPOTENCY_RECONCILIATION_REQUIRED`; it is not automatically replayed because the external payment outcome may be unknown.
+
+Real LND settlement requires a valid 32-byte preimage whose SHA-256 hash matches both the returned payment hash and the decoded invoice's hash. Empty, malformed, incomplete, or mismatched payment responses cannot produce a settled result. Preimages are not exposed as public payment IDs.
+
+Timeouts and unusable payment responses return `LND_PAYMENT_UNCONFIRMED` and leave their idempotency reservations pending across restart and retention expiry. Reusing the same key returns HTTP 409 until reconciliation. Do not bypass this protection with a new key. An upgrade migration also preserves historical completed transport errors before retention cleanup; see the [operations guide](docs/OPERATIONS.md).
 
 ## Local Invoices
 
@@ -60,16 +73,30 @@ These are local identifiers used by InstaMove to simulate invoice handling.
 InstaMove requires Node.js 22.13 or newer. Use the major version recorded in `.nvmrc`.
 
 ```bash
-npm install
+npm ci
 npm start
 ```
 
 The server runs on port 4000.
 
+Without authentication configuration, the workspace can load but protected actions remain unavailable and `/ready` returns HTTP 503. For a usable local mock session in PowerShell, generate temporary credentials and start the server in the same terminal:
+
+```powershell
+$env:LIGHTNING_MODE = 'mock'
+$env:BLUETOOTH_MODE = 'simulated'
+$env:INSTAMOVE_PAYMENT_TOKEN = node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+$env:INSTAMOVE_ADMIN_TOKEN = node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+$env:INSTAMOVE_ENCRYPTION_KEY = node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+npm start
+```
+
+Use the payment token from that terminal in the workspace's token field. These credentials last for the terminal session; deployed environments need persistent secret management. The app reads process environment variables and does not automatically load `.env`. If using a local `.env` file, replace every example placeholder and run `node --env-file=.env src/app.js`. Keep secrets out of version control.
+
 Run the same validation used in CI with:
 
 ```bash
 npm run check
+npm run audit:high
 ```
 
 Before using protected endpoints, configure separate bearer tokens for payment and administrative access:
@@ -93,9 +120,34 @@ Encrypted request payloads use versioned AES-256-GCM envelopes. `INSTAMOVE_ENCRY
 ## Service Probes
 
 - `GET /health` reports process liveness.
-- `GET /ready` verifies Lightning configuration, SQLite access, authentication roles, and Bluetooth initialization.
+- `GET /ready` verifies Lightning configuration, live LND connectivity and synchronization, SQLite access, authentication roles, and the selected Bluetooth backend.
 
 Readiness returns HTTP 503 until every required runtime dependency is correctly configured. Neither probe exposes credentials, invoice data, or upstream LND error bodies.
+
+In real LND modes, readiness calls authenticated `GET /v1/getinfo` and requires chain and graph synchronization. Regtest also requires the reported Bitcoin network to be `regtest`. Probes have a bounded timeout, do not retry, and do not cache successful results. Mock mode skips upstream calls; `/health` remains independent of LND. Readiness does not guarantee liquidity or a route for a particular payment.
+
+## Bluetooth Modes
+
+| Mode | Behavior |
+| --- | --- |
+| `simulated` | Development default; no radio traffic. Readiness accepts it only with mock Lightning. |
+| `windows` | Native Windows GATT peripheral with encrypted requests and session-specific responses. Requires a helper binary, compatible adapter, and separate Bluetooth key. |
+| `disabled` | Explicit HTTP-only operation. Bluetooth endpoints are unavailable. |
+
+To build the Windows x64 helper, install the .NET 10 SDK on Windows 10 build 19041 or newer, then run:
+
+```powershell
+npm run build:bluetooth:windows
+./native/windows-bluetooth/publish/InstaMove.Bluetooth.exe --check
+$env:BLUETOOTH_MODE = 'windows'
+# Load a separately provisioned 32-byte hexadecimal key shared with authorized clients:
+$env:INSTAMOVE_BLUETOOTH_KEY = '<64 hexadecimal characters>'
+npm start
+```
+
+The helper is self-contained after publishing; generated binaries are ignored by Git and must be built or packaged for deployment. Missing hardware, keys, or helper processes fail readiness without falling back to simulation. Windows mode disables HTTP injection into Bluetooth and uncorrelated response broadcasts.
+
+The implemented `instamove-psk/1` protocol uses authenticated Windows link security and AES-256-GCM with a separately provisioned shared key. It is for trusted devices and does not implement the draft Noise/CBOR protocol, per-client revocation, forward secrecy, or deferred offline settlement. Follow the [Windows setup and client protocol guide](docs/WINDOWS_BLUETOOTH.md) for UUIDs, framing, pairing, and validation requirements.
 
 ## Request
 
