@@ -61,3 +61,4 @@ UTF-8 envelope into BLE writes:
 
 ```json
 {
+  "type": "request",
