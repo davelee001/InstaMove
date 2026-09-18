@@ -3,6 +3,13 @@
 Status: Draft  
 Applies to: HTTP API, BLE transport, local persistence, and LND integration
 
+Implementation scope: the Noise/CBOR controls below describe the target protocol.
+The implemented Windows GATT backend uses authenticated Windows link security
+plus AES-GCM with a separately provisioned shared key (`instamove-psk/1`). It is
+limited to trusted devices and does not implement Noise, individual identities,
+or forward secrecy. See [Windows Bluetooth](WINDOWS_BLUETOOTH.md) for implemented
+limits and the remaining physical-client validation requirement.
+
 ## Security Objectives
 
 - Never report a payment as settled without LND confirmation.
