@@ -10,6 +10,7 @@ const idempotency = require("../src/idempotency");
 const originalEnvironment = { ...process.env };
 const payload = { paymentRequest: "original-invoice" };
 const fingerprint = crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+const oldDate = "2000-01-01T00:00:00.000Z";
 
 
 
