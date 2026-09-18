@@ -66,3 +66,4 @@ UTF-8 envelope into BLE writes:
   "payload": {
     "idempotencyKey": "unique-payment-key",
     "paymentRequest": "<BOLT11 invoice>"
+  }
