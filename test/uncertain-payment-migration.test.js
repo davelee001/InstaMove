@@ -58,6 +58,19 @@ for (const code of ["LND_TIMEOUT", "LND_UNAVAILABLE", "LND_HTTP_ERROR",
 }
 
 
+test("migration preserves success and explicit failure replay", async () => {
+  const results = [
+    { statusCode: 200, body: { status: "ok", payment: { status: "settled" } } },
+    { statusCode: 502, body: { status: "error", code: "PAYMENT_FAILED" } },
+    { statusCode: 422, body: { status: "error", code: "VALIDATION_ERROR" } }
+  ];
+  results.forEach((result, i) => seed(`terminal-${i}`, result, new Date().toISOString()));
+  for (const [i, result] of results.entries()) {
+    const replay = await idempotency.execute({
+      key: `terminal-${i}`, payload, operation: async () => assert.fail("Must not execute")
+    });
+  }
+});
 
 test("migration rolls back all changes if its marker cannot be committed", async () => {
   seed("rollback-timeout", { statusCode: 504, body: { status: "error", code: "LND_TIMEOUT" } });
