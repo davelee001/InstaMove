@@ -103,4 +103,5 @@ test("migration runs once and does not reclassify subsequent pre-dispatch errors
   const replay = await idempotency.execute({
     key: "later-decode-timeout", payload, operation: async () => assert.fail("Must replay")
   });
+  assert.equal(replay.result.body.code, "LND_TIMEOUT");
 });
