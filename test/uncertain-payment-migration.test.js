@@ -51,6 +51,7 @@ for (const code of ["LND_TIMEOUT", "LND_UNAVAILABLE", "LND_HTTP_ERROR",
     await blocked("historical-payment");
     const row = getDatabase().prepare("SELECT * FROM idempotency_records WHERE key = ?")
       .get("historical-payment");
+    assert.deepEqual(JSON.parse(row.result_json), result);
     closeDatabases();
     await blocked("historical-payment");
     await blocked("historical-payment", { paymentRequest: "different" }, "IDEMPOTENCY_CONFLICT");
