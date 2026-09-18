@@ -84,3 +84,4 @@ with index zero starts a new message. Only one request per peer may be in flight
 at most eight peer sessions are held, with bounded per-peer request attempts.
 
 Responses use the same framing on targeted notifications and decrypt to:
+`{ "type": "response", "idempotencyKey": "...", "body": { ... } }`.
