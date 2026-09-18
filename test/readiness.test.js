@@ -20,6 +20,7 @@ before(async () => {
   });
   upstream = http.createServer((req, res) => {
     calls++;
+    assert.equal(req.method, "GET");
     if (behavior === "hang") return;
     if (behavior === "trickle") {
       const timer = setInterval(() => res.write(" "), 20);
