@@ -28,3 +28,5 @@ Possession of this key grants access to the existing payment/invoice request flo
 not administrative routes. The native helper receives no application secrets;
 encryption and request validation happen in Node. Set
 `INSTAMOVE_BLUETOOTH_HELPER` to an absolute executable path if deploying elsewhere.
+
+`BLUETOOTH_MODE` accepts only `simulated`, `windows`, or `disabled`. Simulation is
