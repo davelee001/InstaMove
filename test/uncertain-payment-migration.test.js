@@ -35,6 +35,12 @@ function seed(key, result, date = oldDate) {
     .run(key, fingerprint, JSON.stringify(result), date, date);
 }
 
+async function blocked(key, requestPayload = payload, expected = "IDEMPOTENCY_RECONCILIATION_REQUIRED") {
+  let calls = 0;
+  await assert.rejects(() => idempotency.execute({
+    key, payload: requestPayload, operation: async () => { calls += 1; }
+  }), (error) => error.code === expected && error.statusCode === 409);
+}
 
 
 
