@@ -81,6 +81,7 @@ covers records imported from legacy JSON. Original error results, request
 fingerprints, and creation times remain available as reconciliation evidence.
 Because old records lack payment dispatch metadata, the migration conservatively
 includes transport errors that may have occurred before dispatch. It runs once;
+verified successes and explicit payment failures are unchanged. Stop older server
 
 
 Reference: [LND SendPaymentSync](https://api.lightning.community/api/lnd/lightning/send-payment-sync/index.html).
