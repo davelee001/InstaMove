@@ -85,6 +85,7 @@ test("concurrent probes share one request but do not cache stale readiness", asy
   reset();
   const results = await Promise.all(Array.from({ length: 10 }, () => checkLightningNode("regtest")));
   response = { ...healthy, synced_to_chain: false };
+  assert.equal(calls, 2);
 });
 test("mock readiness does not contact LND", async () => {
   reset();
