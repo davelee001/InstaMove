@@ -79,6 +79,7 @@ test("out-of-order and expired fragments never produce requests", () => {
   server.acceptFrame("peer", chunks[0]);
   server.sessions.get("peer").expiresAt = Date.now() - 1;
   for (const data of chunks.slice(1)) server.acceptFrame("peer", data);
+  assert.equal(count, 0);
 });
 test("session limit and busy request prevent unbounded or overlapping work", () => {
   const { server } = create(); ready(server);
