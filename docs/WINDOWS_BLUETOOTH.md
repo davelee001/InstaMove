@@ -40,3 +40,4 @@ disabled in Windows mode. Restart the service after restoring a stopped radio.
 
 This is a pre-shared-key transport for provisioned trusted devices. It is separate
 from the draft `instamove/1` Noise/CBOR protocol, which is not implemented. It does
+not provide forward secrecy, individual client identities, per-client revocation,
