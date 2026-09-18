@@ -35,3 +35,5 @@ satisfy readiness for real LND/regtest deployments. Missing keys, helper binarie
 adapter support, or advertising cause Windows readiness to fail; there is no
 fallback to simulation. HTTP Bluetooth injection and uncorrelated broadcasts are
 disabled in Windows mode. Restart the service after restoring a stopped radio.
+
+## Trusted-device protocol: instamove-psk/1
