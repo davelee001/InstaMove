@@ -75,6 +75,7 @@ function safeOperationError(error, requestId) {
 }
 
 function logOperation(source, payload) {
+  const uncertain = payload.code === "LND_PAYMENT_UNCONFIRMED";
   logger.info("operation_completed", {
     source,
     status: payload.status,
