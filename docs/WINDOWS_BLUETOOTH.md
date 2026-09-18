@@ -87,3 +87,4 @@ Responses use the same framing on targeted notifications and decrypt to:
 `{ "type": "response", "idempotencyKey": "...", "body": { ... } }`.
 Clients must verify the response type and idempotency key. Collect and authenticate
 all fragments before interpreting a result. Invalid, expired, or unauthenticated
+requests are silently discarded. Notification delivery is not settlement proof.
