@@ -79,3 +79,4 @@ Each frame starts with a 4-byte header: unsigned little-endian 16-bit fragment
 index (starting at zero), then unsigned little-endian 16-bit fragment count.
 The remaining bytes are envelope data. Send frames in order, within 15 seconds,
 using at most 128 fragments and 16 KiB per envelope. Respect the negotiated MTU:
+at most `min(512, MTU - 3)` bytes per write, including the 4-byte header. A frame
