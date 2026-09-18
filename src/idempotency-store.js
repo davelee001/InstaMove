@@ -35,7 +35,32 @@ function importLegacyRecords(database) {
 function preparedDatabase() {
   const database = getDatabase();
   importLegacyRecords(database);
+  preserveHistoricalUncertainResults(database);
   return database;
+}
+
+function preserveHistoricalUncertainResults(database) {
+  const migrationKey = "uncertain_results_preserved_v1";
+  if (database.prepare("SELECT value FROM schema_metadata WHERE key = ?").get(migrationKey)) return;
+
+  withImmediateTransaction((transaction) => {
+    // Recheck under the write lock: two processes can initialize together.
+    if (transaction.prepare("SELECT value FROM schema_metadata WHERE key = ?").get(migrationKey)) return;
+    // Older versions persisted transport errors as completed operations. We lack
+    // dispatch metadata, so conservatively preserve these before TTL cleanup.
+    // Retain result_json as evidence; pending records never replay that result.
+    transaction.prepare(`
+      UPDATE idempotency_records
+      SET state = 'pending', updated_at = ?
+      WHERE state = 'completed'
+        AND json_extract(result_json, '$.body.status') = 'error'
+        AND json_extract(result_json, '$.body.code') IN (
+          'LND_TIMEOUT'
+        )
+    `).run(new Date().toISOString());
+    transaction.prepare("INSERT INTO schema_metadata (key, value) VALUES (?, ?)")
+      .run(migrationKey, new Date().toISOString());
+  }, database);
 }
 
 function claimRecord({ key, fingerprint, ownerId }) {
