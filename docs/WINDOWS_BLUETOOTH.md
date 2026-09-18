@@ -90,3 +90,5 @@ all fragments before interpreting a result. Invalid, expired, or unauthenticated
 requests are silently discarded. Notification delivery is not settlement proof.
 After a disconnect or lost response, resend with the original idempotency key;
 uncertain payments remain blocked for reconciliation.
+
+## Validation before payment use
