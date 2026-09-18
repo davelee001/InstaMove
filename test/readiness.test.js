@@ -76,6 +76,7 @@ test("malformed, stalled and continuously streaming responses are bounded", asyn
     reset(); behavior = mode;
     const start = Date.now();
     const result = await fetch(url + "/ready");
+    assert.equal(result.status, 503);
     assert.ok(Date.now() - start < 2000);
     assert.equal(calls, 1);
   }
