@@ -40,6 +40,7 @@ async function blocked(key, requestPayload = payload, expected = "IDEMPOTENCY_RE
   await assert.rejects(() => idempotency.execute({
     key, payload: requestPayload, operation: async () => { calls += 1; }
   }), (error) => error.code === expected && error.statusCode === 409);
+  assert.equal(calls, 0);
 }
 
 for (const code of ["LND_TIMEOUT", "LND_UNAVAILABLE", "LND_HTTP_ERROR",
