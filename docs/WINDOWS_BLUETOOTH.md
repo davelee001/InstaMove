@@ -51,3 +51,4 @@ nonce, 16-byte tag, UTF-8 associated data `instamove:v1`) with the dedicated
 Bluetooth key. Every encryption operation must use a fresh cryptographic nonce.
 
 | GATT role | UUID |
+| --- | --- |
