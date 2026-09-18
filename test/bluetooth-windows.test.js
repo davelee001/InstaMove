@@ -92,6 +92,7 @@ test("disconnect discards late responses and HTTP injection is unavailable", () 
   send(server, request());
   server.handleEvent({ type: "disconnect", session: "peer-one" });
   reply({ status: "ok" });
+  assert.equal(child.stdin.read(), null);
   assert.throws(() => server.receiveData({}), error => error.code === "BLUETOOTH_SIMULATION_DISABLED");
   assert.throws(() => server.sendResponse({}), error => error.code === "BLUETOOTH_SESSION_REQUIRED");
 });
