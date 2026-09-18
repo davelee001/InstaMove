@@ -51,6 +51,7 @@ for (const code of ["LND_TIMEOUT", "LND_UNAVAILABLE", "LND_HTTP_ERROR",
     await blocked("historical-payment");
     const row = getDatabase().prepare("SELECT * FROM idempotency_records WHERE key = ?")
       .get("historical-payment");
+    assert.equal(row.state, "pending");
     assert.equal(row.fingerprint, fingerprint);
     assert.equal(row.created_at, oldDate);
     assert.deepEqual(JSON.parse(row.result_json), result);
