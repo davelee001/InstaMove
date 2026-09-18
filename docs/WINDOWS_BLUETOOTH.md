@@ -68,3 +68,4 @@ UTF-8 envelope into BLE writes:
     "paymentRequest": "<BOLT11 invoice>"
   }
 }
+```
