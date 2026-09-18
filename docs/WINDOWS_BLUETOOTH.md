@@ -60,3 +60,4 @@ Subscribe to responses before writing. Encrypt this JSON shape, then fragment th
 UTF-8 envelope into BLE writes:
 
 ```json
+{
