@@ -20,6 +20,7 @@ before(async () => {
   });
   upstream = http.createServer((req, res) => {
     calls++;
+    assert.equal(req.url, "/v1/getinfo");
     assert.equal(req.method, "GET");
     if (behavior === "hang") return;
     if (behavior === "trickle") {
