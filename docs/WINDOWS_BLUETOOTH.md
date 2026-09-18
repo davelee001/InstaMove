@@ -72,3 +72,4 @@ UTF-8 envelope into BLE writes:
 
 Use an actual expiry strictly after the current UTC time and no more than 60
 seconds ahead; the example timestamp is illustrative. Request payload schemas,
+amount bounds, settlement proof checks, and durable idempotency remain the same
