@@ -43,3 +43,5 @@ from the draft `instamove/1` Noise/CBOR protocol, which is not implemented. It d
 not provide forward secrecy, individual client identities, per-client revocation,
 or deferred offline settlement. Rotate the shared key on all provisioned devices
 if one is compromised. Do not present this as an open public-payer protocol.
+
+Windows requires an authenticated, encrypted BLE link for writes. Pair the client
