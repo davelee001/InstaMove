@@ -69,6 +69,7 @@ test("upstream authentication and HTTP failures make readiness fail without retr
   for (const code of [401, 403, 500, 503]) {
     reset(); status = code; response = { error: "private-upstream-detail" };
     const result = await fetch(url + "/ready");
+    assert.equal((await result.text()).includes("private-upstream-detail"), false);
     assert.equal(calls, 1);
   }
 });
