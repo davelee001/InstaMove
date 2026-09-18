@@ -92,3 +92,5 @@ After a disconnect or lost response, resend with the original idempotency key;
 uncertain payments remain blocked for reconciliation.
 
 ## Validation before payment use
+
+Verify pairing and authorized request/response exchange with the actual client,
