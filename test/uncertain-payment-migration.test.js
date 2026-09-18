@@ -8,6 +8,7 @@ const { getDatabase, closeDatabases } = require("../src/database");
 const idempotency = require("../src/idempotency");
 
 const originalEnvironment = { ...process.env };
+const payload = { paymentRequest: "original-invoice" };
 
 
 
