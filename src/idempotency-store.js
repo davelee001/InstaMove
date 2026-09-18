@@ -55,7 +55,7 @@ function preserveHistoricalUncertainResults(database) {
       WHERE state = 'completed'
         AND json_extract(result_json, '$.body.status') = 'error'
         AND json_extract(result_json, '$.body.code') IN (
-          'LND_TIMEOUT'
+          'LND_TIMEOUT', 'LND_UNAVAILABLE'
         )
     `).run(new Date().toISOString());
     transaction.prepare("INSERT INTO schema_metadata (key, value) VALUES (?, ?)")
