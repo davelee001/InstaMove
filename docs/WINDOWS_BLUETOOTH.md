@@ -98,3 +98,5 @@ including negotiated MTU limits, reconnects, radio shutdown, invalid keys, and
 lost notifications. Run the flow against LND regtest before enabling real funds.
 The automated Node tests use a fake native process to exercise protocol and
 lifecycle behavior; they do not establish radio interoperability.
+
+References: [Windows GATT server](https://learn.microsoft.com/en-us/windows/uwp/devices-sensors/gatt-server),
