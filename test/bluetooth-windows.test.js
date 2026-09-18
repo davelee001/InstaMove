@@ -46,6 +46,7 @@ test("Windows backend readiness follows actual helper state and process exit", (
   const { server, child, launchOptions } = create();
   ready(server); assert.equal(server.getStatus().ready, true);
   child.emit("exit", 1); assert.equal(server.getStatus().ready, false);
+  assert.equal(launchOptions.windowsHide, true);
   assert.equal(launchOptions.env.INSTAMOVE_BLUETOOTH_KEY, undefined);
   assert.equal(launchOptions.env.LND_MACAROON, undefined);
 });
