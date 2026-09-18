@@ -46,6 +46,7 @@ test("Windows backend readiness follows actual helper state and process exit", (
   const { server, child, launchOptions } = create();
   ready(server); assert.equal(server.getStatus().ready, true);
   child.emit("exit", 1); assert.equal(server.getStatus().ready, false);
+  assert.equal(launchOptions.env.INSTAMOVE_BLUETOOTH_KEY, undefined);
   assert.equal(launchOptions.env.LND_MACAROON, undefined);
 });
 test("Windows backend refuses missing key, short retention, unsupported OS and failed helper", () => {
