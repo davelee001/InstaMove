@@ -52,6 +52,7 @@ test("Windows backend refuses missing key, short retention, unsupported OS and f
   const missing = new WindowsBluetoothServer({ platform: "win32" });
   process.env.INSTAMOVE_BLUETOOTH_KEY = key;
   process.env.IDEMPOTENCY_RETENTION_MS = "10";
+  assert.equal(new WindowsBluetoothServer({ platform: "win32" }).getStatus().state, "retention_too_short");
   const { server, child } = create(); child.emit("error", new Error("missing"));
   assert.equal(server.getStatus().ready, false);
 });
