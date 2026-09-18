@@ -84,6 +84,7 @@ test("liveness never depends on LND", async () => {
 test("concurrent probes share one request but do not cache stale readiness", async () => {
   reset();
   const results = await Promise.all(Array.from({ length: 10 }, () => checkLightningNode("regtest")));
+  assert.ok(results.every(result => result.healthy));
   assert.equal(calls, 1);
   response = { ...healthy, synced_to_chain: false };
   assert.equal((await checkLightningNode("regtest")).healthy, false);
