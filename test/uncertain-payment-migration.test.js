@@ -57,6 +57,15 @@ for (const code of ["LND_TIMEOUT", "LND_UNAVAILABLE", "LND_HTTP_ERROR",
   });
 }
 
+test("legacy JSON timeout is preserved before the first retention cleanup", async () => {
+  fs.writeFileSync(path.join(directory, "idempotency.json"), JSON.stringify([{
+    key: "legacy-timeout", fingerprint, createdAt: oldDate,
+    result: { statusCode: 504, body: { status: "error", code: "LND_TIMEOUT" } }
+  }]));
+  await blocked("legacy-timeout");
+  assert.equal(getDatabase().prepare("SELECT state FROM idempotency_records WHERE key = ?")
+    .get("legacy-timeout").state, "pending");
+});
 
 test("migration preserves success and explicit failure replay", async () => {
   const results = [
