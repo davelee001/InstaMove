@@ -1,9 +1,10 @@
 const EventEmitter = require("events");
 const logger = require("./logger");
+const { AppError } = require("./errors");
+const { WindowsBluetoothServer } = require("./bluetooth-windows");
 
 /**
- * Simulated Bluetooth service for development/testing
- * Real Bluetooth support requires platform-specific libraries (bleno on Linux/macOS)
+ * Simulation for development. Native Windows BLE is selected explicitly.
  */
 
 class SimulatedCharacteristic {
@@ -48,7 +49,7 @@ class BluetoothServer extends EventEmitter {
   constructor(options = {}) {
     super();
     this.name = options.name || "InstaMove";
-    this.mode = options.mode || "simulated";
+    this.mode = "simulated";
     this.isAdvertising = false;
 
     // Initialize characteristics
@@ -114,6 +115,7 @@ class BluetoothServer extends EventEmitter {
       name: this.name,
       mode: this.mode,
       advertising: this.isAdvertising,
+      ready: this.isAdvertising,
       subscribers: this.notifyChar.subscribers.length
     };
   }
@@ -127,13 +129,20 @@ class BluetoothServer extends EventEmitter {
 
 let bluetoothServer = null;
 
+class DisabledBluetoothServer extends EventEmitter {
+  getStatus() { return { mode: "disabled", ready: true, advertising: false, subscribers: 0 }; }
+  receiveData() { throw new AppError(503, "BLUETOOTH_DISABLED", "Bluetooth is disabled"); }
+  sendResponse() { throw new AppError(503, "BLUETOOTH_DISABLED", "Bluetooth is disabled"); }
+  stopAdvertising() {}
+}
+
 function initBluetooth(options = {}) {
   if (!bluetoothServer) {
     const mode = process.env.BLUETOOTH_MODE || options.mode || "simulated";
-    bluetoothServer = new BluetoothServer({
-      name: options.name || "InstaMove",
-      mode
-    });
+    if (mode === "simulated") bluetoothServer = new BluetoothServer(options);
+    else if (mode === "windows") bluetoothServer = new WindowsBluetoothServer(options);
+    else if (mode === "disabled") bluetoothServer = new DisabledBluetoothServer();
+    else throw new AppError(503, "BLUETOOTH_MODE_INVALID", "BLUETOOTH_MODE must be simulated, windows, or disabled");
   }
   return bluetoothServer;
 }
