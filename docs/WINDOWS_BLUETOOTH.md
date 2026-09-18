@@ -52,3 +52,4 @@ Bluetooth key. Every encryption operation must use a fresh cryptographic nonce.
 
 | GATT role | UUID |
 | --- | --- |
+| Service | `d1f0b001-7c44-4e70-9bc9-4c7037a18c01` |
