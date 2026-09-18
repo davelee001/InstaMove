@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node src/app.js",
+    "build:bluetooth:windows": "dotnet publish native/windows-bluetooth/InstaMove.Bluetooth.csproj -c Release -o native/windows-bluetooth/publish",
     "test": "node --test",
     "check:syntax": "node scripts/check-syntax.js",
     "check": "npm run check:syntax && npm test",
