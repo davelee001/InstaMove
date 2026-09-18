@@ -30,3 +30,4 @@ encryption and request validation happen in Node. Set
 `INSTAMOVE_BLUETOOTH_HELPER` to an absolute executable path if deploying elsewhere.
 
 `BLUETOOTH_MODE` accepts only `simulated`, `windows`, or `disabled`. Simulation is
+the development default and is explicitly labeled in the web workspace. It cannot
