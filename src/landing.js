@@ -30,7 +30,8 @@ function renderLandingPage({ activeNode, nodeCount, bluetoothStatus, lightningMo
   const nodeId = activeNode?.id || "No active node";
   const nodeAddress = activeNode?.ip || activeNode?.host || "Not configured";
   const bluetoothReady = Boolean(bluetoothStatus?.advertising);
-  const bluetoothLabel = bluetoothReady ? "Advertising" : "Idle";
+  const bluetoothLabel = bluetoothStatus?.mode === "simulated" ? "Simulated"
+    : bluetoothStatus?.mode === "disabled" ? "Disabled" : bluetoothReady ? "Advertising" : "Unavailable";
   const subscriberCount = Number(bluetoothStatus?.subscribers || 0);
 
   return `<!doctype html>
