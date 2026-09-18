@@ -42,7 +42,7 @@ async function blocked(key, requestPayload = payload, expected = "IDEMPOTENCY_RE
   }), (error) => error.code === expected && error.statusCode === 409);
 }
 
-for (const code of [ "LND_UNAVAILABLE", "LND_HTTP_ERROR",
+for (const code of ["LND_TIMEOUT", "LND_UNAVAILABLE", "LND_HTTP_ERROR",
   "LND_INVALID_RESPONSE", "LND_RESPONSE_TOO_LARGE", "LND_PAYMENT_UNCONFIRMED",
   "PERSISTENCE_CONFIRMATION_FAILED"]) {
   test(`historical ${code} survives expiry and restart without payment replay`, async () => {
