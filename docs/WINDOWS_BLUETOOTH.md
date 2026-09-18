@@ -69,3 +69,5 @@ UTF-8 envelope into BLE writes:
   }
 }
 ```
+
+Use an actual expiry strictly after the current UTC time and no more than 60
