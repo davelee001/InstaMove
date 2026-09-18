@@ -49,3 +49,5 @@ using Windows' pairing UI. Application messages additionally use the existing
 AES-256-GCM envelope (`v1.nonce.tag.ciphertext`, base64url components, 12-byte
 nonce, 16-byte tag, UTF-8 associated data `instamove:v1`) with the dedicated
 Bluetooth key. Every encryption operation must use a fresh cryptographic nonce.
+
+| GATT role | UUID |
