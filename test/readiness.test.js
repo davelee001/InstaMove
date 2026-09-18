@@ -88,6 +88,7 @@ test("concurrent probes share one request but do not cache stale readiness", asy
 });
 test("mock readiness does not contact LND", async () => {
   reset();
+  assert.equal(calls, 0);
 });
 
 test("real Lightning readiness rejects simulated, stopped and unavailable Bluetooth", async () => {
