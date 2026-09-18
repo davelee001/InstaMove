@@ -124,3 +124,4 @@ Creating an invoice no longer opens a Lightning channel or pays that invoice fro
 - [Offline payment protocol](docs/OFFLINE_PAYMENT_PROTOCOL.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Operations guide](docs/OPERATIONS.md)
+- [Native Windows Bluetooth setup and protocol](docs/WINDOWS_BLUETOOTH.md)
