@@ -84,6 +84,7 @@ test("session limit and busy request prevent unbounded or overlapping work", () 
   const { server } = create(); ready(server);
   let count = 0; server.on("request", () => count++);
   send(server, request()); send(server, request());
+  assert.equal(count, 1);
   for (let i = 0; i < 30; i++) send(server, request(), `peer-${i}`);
   assert.equal(server.sessions.size, 8);
   assert.equal(count, 8);
