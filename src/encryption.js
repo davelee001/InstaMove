@@ -40,9 +40,9 @@ function envelopeAad(version) {
   return Buffer.from(`instamove:${version}`, "utf8");
 }
 
-function encrypt(payload) {
+function encrypt(payload, keySource) {
   const iv = crypto.randomBytes(config.ivLength);
-  const cipher = crypto.createCipheriv(config.algorithm, readKey(), iv, {
+  const cipher = crypto.createCipheriv(config.algorithm, readKey(keySource), iv, {
     authTagLength: config.tagLength
   });
   cipher.setAAD(envelopeAad(config.envelopeVersion));
@@ -61,7 +61,7 @@ function encrypt(payload) {
   ].join(".");
 }
 
-function decrypt(envelope) {
+function decrypt(envelope, keySource) {
   const parts = String(envelope || "").split(".");
   if (parts.length !== 4 || parts[0] !== config.envelopeVersion) {
     throw new AppError(422, "INVALID_ENCRYPTED_PAYLOAD", "The encrypted payload envelope is invalid");
@@ -77,7 +77,7 @@ function decrypt(envelope) {
       throw new Error("Invalid envelope lengths");
     }
 
-    const decipher = crypto.createDecipheriv(config.algorithm, readKey(), iv, {
+    const decipher = crypto.createDecipheriv(config.algorithm, readKey(keySource), iv, {
       authTagLength: config.tagLength
     });
     decipher.setAAD(envelopeAad(version));
