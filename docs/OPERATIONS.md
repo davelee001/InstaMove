@@ -84,9 +84,10 @@ includes transport errors that may have occurred before dispatch. It runs once;
 verified successes and explicit payment failures are unchanged. Stop older server
 versions before upgrading so they cannot continue writing unsafe completed errors.
 Records already deleted by an older version cannot be recovered by this migration.
+
 New unconfirmed payment responses emit `operation_reconciliation_required` in the
 structured log. A timeout is not evidence of failure: reconcile the original
 invoice against LND payment history before resolving its pending reservation.
-
+Do not delete pending rows or use a new idempotency key to bypass this check.
 
 Reference: [LND SendPaymentSync](https://api.lightning.community/api/lnd/lightning/send-payment-sync/index.html).
