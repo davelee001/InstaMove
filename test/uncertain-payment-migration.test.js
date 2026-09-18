@@ -78,6 +78,7 @@ test("migration preserves success and explicit failure replay", async () => {
     const replay = await idempotency.execute({
       key: `terminal-${i}`, payload, operation: async () => assert.fail("Must not execute")
     });
+    assert.deepEqual(replay.result, result);
   }
 });
 
