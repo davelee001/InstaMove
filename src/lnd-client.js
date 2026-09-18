@@ -93,6 +93,12 @@ function requestJson(urlString, { method = "GET", headers = {}, body, timeoutMs,
     request.setTimeout(timeoutMs, () => {
       request.destroy(new AppError(504, "LND_TIMEOUT", "The Lightning service did not respond in time"));
     });
+    // Socket inactivity alone does not bound a slow, continuously streaming peer.
+    const deadline = setTimeout(() => {
+      request.destroy(new AppError(504, "LND_TIMEOUT", "The Lightning service did not respond in time"));
+    }, timeoutMs);
+    deadline.unref();
+    request.once("close", () => clearTimeout(deadline));
     request.on("error", (error) => {
       if (error instanceof AppError) reject(error);
       else reject(new AppError(502, "LND_UNAVAILABLE", "The Lightning service is unavailable"));
@@ -120,7 +126,8 @@ async function callLnd(pathname, options = {}) {
 
   const method = String(options.method || "GET").toUpperCase();
   const transportConfig = getTransportConfig();
-  const attempts = method === "GET" ? transportConfig.getRetryAttempts : 1;
+  const attempts = method === "GET"
+    ? positiveInteger(options.getRetryAttempts, transportConfig.getRetryAttempts) : 1;
   let lastError;
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -133,7 +140,7 @@ async function callLnd(pathname, options = {}) {
           ...(options.headers || {})
         },
         body: options.body,
-        timeoutMs: transportConfig.timeoutMs,
+        timeoutMs: positiveInteger(options.timeoutMs, transportConfig.timeoutMs),
         maxResponseBytes: transportConfig.maxResponseBytes
       });
     } catch (error) {
