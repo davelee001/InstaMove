@@ -81,3 +81,4 @@ The remaining bytes are envelope data. Send frames in order, within 15 seconds,
 using at most 128 fragments and 16 KiB per envelope. Respect the negotiated MTU:
 at most `min(512, MTU - 3)` bytes per write, including the 4-byte header. A frame
 with index zero starts a new message. Only one request per peer may be in flight;
+at most eight peer sessions are held, with bounded per-peer request attempts.
