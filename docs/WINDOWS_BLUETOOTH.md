@@ -95,3 +95,4 @@ uncertain payments remain blocked for reconciliation.
 
 Verify pairing and authorized request/response exchange with the actual client,
 including negotiated MTU limits, reconnects, radio shutdown, invalid keys, and
+lost notifications. Run the flow against LND regtest before enabling real funds.
