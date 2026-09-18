@@ -87,8 +87,9 @@ function logOperation(source, payload) {
 
 const bluetooth = initBluetooth({ name: "InstaMove" });
 
-bluetooth.on("request", async (payload) => {
+bluetooth.on("request", async (payload, respond) => {
   const requestId = crypto.randomUUID();
+  const reply = typeof respond === "function" ? respond : body => bluetooth.sendResponse(body);
   try {
     validateBluetoothBody(payload);
     const { idempotencyKey: rawKey, ...requestPayload } = payload;
@@ -106,9 +107,9 @@ bluetooth.on("request", async (payload) => {
       }
     });
     logOperation("bluetooth", execution.result.body);
-    bluetooth.sendResponse(execution.result.body);
+    reply(execution.result.body);
   } catch (error) {
-    bluetooth.sendResponse(toErrorResponse(error, requestId).body);
+    reply(toErrorResponse(error, requestId).body);
   }
 });
 
@@ -219,6 +220,7 @@ if (require.main === module) {
   const server = startServer();
   const shutdown = (signal) => {
     logger.info("server_shutdown_started", { signal });
+    bluetooth.stopAdvertising();
     server.close(() => {
       closeDatabases();
       logger.info("server_shutdown_completed", { signal });
