@@ -94,3 +94,4 @@ uncertain payments remain blocked for reconciliation.
 ## Validation before payment use
 
 Verify pairing and authorized request/response exchange with the actual client,
+including negotiated MTU limits, reconnects, radio shutdown, invalid keys, and
