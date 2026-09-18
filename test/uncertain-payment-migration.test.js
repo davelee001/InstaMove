@@ -9,6 +9,7 @@ const idempotency = require("../src/idempotency");
 
 const originalEnvironment = { ...process.env };
 const payload = { paymentRequest: "original-invoice" };
+const fingerprint = crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
 
 
 
