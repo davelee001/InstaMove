@@ -50,6 +50,7 @@ function reset() { response = healthy; status = 200; behavior = null; calls = 0;
 test("ready requires a reachable synchronized LND node and exposes no node details", async () => {
   reset();
   const result = await fetch(url + "/ready");
+  assert.equal(result.status, 200);
   const body = await result.json();
   assert.equal(body.checks.lightningReachable, true);
   assert.equal(body.checks.lightningHealthy, true);
