@@ -76,6 +76,7 @@ test("out-of-order and expired fragments never produce requests", () => {
   let count = 0; server.on("request", () => count++);
   const chunks = frames(request());
   for (const data of chunks.slice().reverse()) server.acceptFrame("peer", data);
+  assert.equal(count, 0);
   server.acceptFrame("peer", chunks[0]);
   server.sessions.get("peer").expiresAt = Date.now() - 1;
   for (const data of chunks.slice(1)) server.acceptFrame("peer", data);
