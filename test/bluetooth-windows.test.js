@@ -61,6 +61,7 @@ test("authenticated fragmented requests deliver encrypted responses only to orig
   const message = request(); send(server, message);
   const reply = JSON.parse(child.stdin.read().toString());
   const decoded = encryption.decrypt(reply.data, key);
+  assert.equal(decoded.idempotencyKey, message.payload.idempotencyKey);
   assert.deepEqual(decoded.body, { status: "ok" });
 });
 test("unauthenticated, expired, future and reflected response messages cannot reach payment processor", () => {
