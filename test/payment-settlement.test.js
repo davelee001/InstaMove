@@ -346,6 +346,13 @@ test("HTTP transport failures preserve reservations and never resend payments", 
     const first = await request(key);
     assert.equal(first.status, 502);
     assert.equal(first.body.code, "LND_PAYMENT_UNCONFIRMED");
+    const { getDatabase, closeDatabases } = require("../src/database");
+    const row = getDatabase().prepare("SELECT state, result_json FROM idempotency_records WHERE key = ?").get(key);
+    assert.equal(row.state, "pending");
+    assert.equal(row.result_json, null);
+    getDatabase().prepare("UPDATE idempotency_records SET created_at = ? WHERE key = ?")
+      .run("2000-01-01T00:00:00.000Z", key);
+    closeDatabases();
     responseBehavior = undefined;
     const retry = await request(key);
     assert.equal(retry.status, 409);
@@ -353,6 +360,32 @@ test("HTTP transport failures preserve reservations and never resend payments", 
     assert.equal(payments, 1);
   }
   process.env.LND_REQUEST_TIMEOUT_MS = "1000";
+});
+
+test("concurrent HTTP retries cannot duplicate a timed-out payment", async () => {
+  reset();
+  responseBehavior = "timeout";
+  process.env.LND_REQUEST_TIMEOUT_MS = "100";
+  try {
+    const key = "concurrent-timeout-payment";
+    const responses = await Promise.all([request(key), request(key), request(key)]);
+    for (const response of responses) {
+      assert.ok(["LND_PAYMENT_UNCONFIRMED", "IDEMPOTENCY_RECONCILIATION_REQUIRED"].includes(response.body.code));
+      assert.ok([502, 409].includes(response.status));
+    }
+    assert.equal(payments, 1);
+    const row = require("../src/database").getDatabase()
+      .prepare("SELECT state, result_json FROM idempotency_records WHERE key = ?").get(key);
+    assert.equal(row.state, "pending");
+    assert.equal(row.result_json, null);
+    responseBehavior = undefined;
+    const retry = await request(key);
+    assert.equal(retry.body.code, "IDEMPOTENCY_RECONCILIATION_REQUIRED");
+    assert.equal(payments, 1);
+  } finally {
+    process.env.LND_REQUEST_TIMEOUT_MS = "1000";
+    responseBehavior = undefined;
+  }
 });
 
 test("Bluetooth cannot announce settlement or replay an unconfirmed payment", async () => {
