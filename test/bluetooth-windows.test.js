@@ -70,6 +70,7 @@ test("unauthenticated, expired, future and reflected response messages cannot re
   send(server, { ...request(), expiresAt: Date.now() + 120000 }, "future");
   send(server, { ...request(), type: "response" }, "reflection");
   send(server, { ...request(), payload: [] }, "array");
+  assert.equal(count, 0);
 });
 test("out-of-order and expired fragments never produce requests", () => {
   const { server } = create(); ready(server);
