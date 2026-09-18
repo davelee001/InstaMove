@@ -76,3 +76,4 @@ amount bounds, settlement proof checks, and durable idempotency remain the same
 as HTTP. Idempotency retention must be at least 120 seconds in Windows mode.
 
 Each frame starts with a 4-byte header: unsigned little-endian 16-bit fragment
+index (starting at zero), then unsigned little-endian 16-bit fragment count.
