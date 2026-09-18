@@ -76,6 +76,7 @@ correctly. It does not replace TLS verification or protect against a compromised
 LND node. Existing stored results are not retroactively revalidated.
 
 On upgrade, before idempotency retention cleanup runs, a transactional migration
+preserves historical completed LND transport errors as pending records. This also
 
 
 Reference: [LND SendPaymentSync](https://api.lightning.community/api/lnd/lightning/send-payment-sync/index.html).
