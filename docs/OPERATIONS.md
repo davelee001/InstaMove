@@ -78,6 +78,7 @@ LND node. Existing stored results are not retroactively revalidated.
 On upgrade, before idempotency retention cleanup runs, a transactional migration
 preserves historical completed LND transport errors as pending records. This also
 covers records imported from legacy JSON. Original error results, request
+fingerprints, and creation times remain available as reconciliation evidence.
 
 
 Reference: [LND SendPaymentSync](https://api.lightning.community/api/lnd/lightning/send-payment-sync/index.html).
