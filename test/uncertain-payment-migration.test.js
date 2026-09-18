@@ -43,7 +43,7 @@ async function blocked(key, requestPayload = payload, expected = "IDEMPOTENCY_RE
 }
 
 for (const code of [  
-    
+    "LND_PAYMENT_UNCONFIRMED",
   "PERSISTENCE_CONFIRMATION_FAILED"]) {
   test(`historical ${code} survives expiry and restart without payment replay`, async () => {
     const result = { statusCode: 502, body: { status: "error", code } };
