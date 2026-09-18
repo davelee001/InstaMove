@@ -26,3 +26,14 @@ jobs:
         run: npm run check
       - name: Audit high-severity dependencies
         run: npm run audit:high
+
+  windows-bluetooth-build:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile native Windows GATT helper
+        run: dotnet publish native/windows-bluetooth/InstaMove.Bluetooth.csproj -c Release -o native/windows-bluetooth/publish
