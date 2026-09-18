@@ -53,6 +53,7 @@ test("Windows backend refuses missing key, short retention, unsupported OS and f
   process.env.INSTAMOVE_BLUETOOTH_KEY = key;
   process.env.IDEMPOTENCY_RETENTION_MS = "10";
   const { server, child } = create(); child.emit("error", new Error("missing"));
+  assert.equal(server.getStatus().ready, false);
 });
 test("authenticated fragmented requests deliver encrypted responses only to originating peer", () => {
   const { server, child } = create(); ready(server);
