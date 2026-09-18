@@ -3,7 +3,25 @@
 ## Service Probes
 
 - `GET /health` is a liveness probe. It confirms that the Node.js process can serve requests.
-- `GET /ready` is a readiness probe. It verifies Lightning configuration, storage access, distinct authentication roles, and Bluetooth initialization.
+- `GET /ready` verifies Lightning configuration, live LND connectivity and synchronization, storage access, distinct authentication roles, and the selected Bluetooth backend.
+
+For `lnd` and `regtest`, each probe calls authenticated `GET /v1/getinfo` and
+requires a valid node public key, Bitcoin chain information, and both
+`synced_to_chain` and `synced_to_graph` to be true. Regtest also requires the
+reported Bitcoin network to be `regtest`. Missing permissions, a locked or
+unreachable node, malformed responses, and unsynchronized nodes return HTTP 503.
+The macaroon must permit `GetInfo`. A healthy node does not guarantee route
+availability or sufficient liquidity for a particular payment.
+
+`LND_READINESS_TIMEOUT_MS` defaults to 2000 and is capped at 10000. Readiness does
+not retry upstream calls. Concurrent probes share an in-flight request, with no
+cached success afterward. Transport deadlines also bound continuously streaming
+responses. Mock mode skips LND; `/health` remains an independent liveness check.
+
+Bluetooth simulation can satisfy readiness only in mock Lightning mode. Select
+`BLUETOOTH_MODE=disabled` explicitly for HTTP-only deployments. Select `windows`
+for real BLE: readiness stays false until the helper confirms advertising, and
+fails when the helper exits or the radio stops. See [Windows Bluetooth](WINDOWS_BLUETOOTH.md).
 
 Neither endpoint returns tokens, macaroons, node addresses, invoice data, or upstream error bodies.
 
