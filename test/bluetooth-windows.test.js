@@ -98,4 +98,5 @@ test("malformed helper output fails closed and stopped service cannot become rea
   server.consume("not-json\n"); assert.equal(server.getStatus().ready, false);
   ready(server); assert.equal(server.getStatus().ready, false);
   server.stopAdvertising(); ready(server);
+  assert.equal(server.getStatus().ready, false);
 });
