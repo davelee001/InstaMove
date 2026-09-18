@@ -74,3 +74,5 @@ Use an actual expiry strictly after the current UTC time and no more than 60
 seconds ahead; the example timestamp is illustrative. Request payload schemas,
 amount bounds, settlement proof checks, and durable idempotency remain the same
 as HTTP. Idempotency retention must be at least 120 seconds in Windows mode.
+
+Each frame starts with a 4-byte header: unsigned little-endian 16-bit fragment
