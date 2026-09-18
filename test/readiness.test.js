@@ -51,6 +51,7 @@ test("ready requires a reachable synchronized LND node and exposes no node detai
   reset();
   const result = await fetch(url + "/ready");
   const body = await result.json();
+  assert.equal(calls, 1);
 });
 for (const [label, value] of [
   ["chain synchronization", { ...healthy, synced_to_chain: false }],
