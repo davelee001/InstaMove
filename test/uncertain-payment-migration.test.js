@@ -13,6 +13,11 @@ const fingerprint = crypto.createHash("sha256").update(JSON.stringify(payload)).
 const oldDate = "2000-01-01T00:00:00.000Z";
 let directory;
 
+beforeEach(() => {
+  directory = fs.mkdtempSync(path.join(os.tmpdir(), "instamove-uncertain-migration-"));
+  process.env.INSTAMOVE_DATA_DIR = directory;
+  process.env.INSTAMOVE_DB_PATH = path.join(directory, "test.sqlite");
+});
 
 
 
