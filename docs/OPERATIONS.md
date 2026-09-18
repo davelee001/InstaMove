@@ -75,4 +75,7 @@ This validation trusts the configured LND node to decode the requested invoice
 correctly. It does not replace TLS verification or protect against a compromised
 LND node. Existing stored results are not retroactively revalidated.
 
+On upgrade, before idempotency retention cleanup runs, a transactional migration
+
+
 Reference: [LND SendPaymentSync](https://api.lightning.community/api/lnd/lightning/send-payment-sync/index.html).
