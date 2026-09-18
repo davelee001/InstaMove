@@ -59,6 +59,19 @@ for (const code of ["LND_TIMEOUT", "LND_UNAVAILABLE", "LND_HTTP_ERROR",
 
 
 
+test("migration rolls back all changes if its marker cannot be committed", async () => {
+  seed("rollback-timeout", { statusCode: 504, body: { status: "error", code: "LND_TIMEOUT" } });
+  getDatabase().exec(`CREATE TRIGGER fail_migration BEFORE INSERT ON schema_metadata
+    WHEN NEW.key = 'uncertain_results_preserved_v1'
+    BEGIN SELECT RAISE(ABORT, 'migration interrupted'); END;`);
+  await assert.rejects(() => idempotency.execute({
+    key: "rollback-timeout", payload, operation: async () => assert.fail("Must not execute")
+  }), /migration interrupted/);
+  assert.equal(getDatabase().prepare("SELECT state FROM idempotency_records WHERE key = ?")
+    .get("rollback-timeout").state, "completed");
+  getDatabase().exec("DROP TRIGGER fail_migration");
+  await blocked("rollback-timeout");
+});
 
 test("migration runs once and does not reclassify subsequent pre-dispatch errors", async () => {
   await idempotency.execute({ key: "initialize", payload, operation: async () => ({ statusCode: 200 }) });
