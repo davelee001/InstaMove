@@ -100,3 +100,4 @@ The automated Node tests use a fake native process to exercise protocol and
 lifecycle behavior; they do not establish radio interoperability.
 
 References: [Windows GATT server](https://learn.microsoft.com/en-us/windows/uwp/devices-sensors/gatt-server),
+[Windows Runtime in desktop apps](https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/desktop-to-uwp-enhance).
