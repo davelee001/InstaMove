@@ -37,3 +37,5 @@ fallback to simulation. HTTP Bluetooth injection and uncorrelated broadcasts are
 disabled in Windows mode. Restart the service after restoring a stopped radio.
 
 ## Trusted-device protocol: instamove-psk/1
+
+This is a pre-shared-key transport for provisioned trusted devices. It is separate
