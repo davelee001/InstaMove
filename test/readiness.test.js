@@ -80,6 +80,7 @@ test("malformed, stalled and continuously streaming responses are bounded", asyn
 });
 test("liveness never depends on LND", async () => {
   reset(); behavior = "hang";
+  assert.equal((await fetch(url + "/health")).status, 200);
   assert.equal(calls, 0);
 });
 test("concurrent probes share one request but do not cache stale readiness", async () => {
