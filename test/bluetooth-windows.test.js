@@ -60,6 +60,7 @@ test("authenticated fragmented requests deliver encrypted responses only to orig
   server.on("request", (payload, respond) => { received.push(payload); respond({ status: "ok" }); });
   const message = request(); send(server, message);
   const reply = JSON.parse(child.stdin.read().toString());
+  assert.equal(reply.session, "peer-one");
   assert.equal(reply.type, "response");
   const decoded = encryption.decrypt(reply.data, key);
   assert.equal(decoded.type, "response");
